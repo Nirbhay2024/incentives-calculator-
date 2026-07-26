@@ -1,0 +1,190 @@
+{
+  "month": "July 2026",
+  "dpSlabRewards": {
+    "smartphones": {
+      "10k-15k":  { "reward": 30,  "label": "₹10k–15k" },
+      "15k-20k":  { "reward": 75,  "label": "₹15k–20k" },
+      "20k-30k":  { "reward": 250, "label": "₹20k–30k" },
+      "30k-40k":  { "reward": 300, "label": "₹30k–40k" },
+      "40k+":     { "reward": 400, "label": "₹40k+" },
+      "70k-100k": { "reward": 0,   "label": "₹70k–100k (Flagship)" },
+      "100k+":    { "reward": 0,   "label": "₹100k+ (Flagship)" }
+    }
+  },
+  "smartphones": {
+    "f_m_series_multiplier": 0.5,
+    "f_m_exceptions": ["F17"],
+    "focusModels": {
+      "A57": [
+        { "min": 1, "max": 2, "reward": 550 },
+        { "min": 3, "max": 4, "reward": 600 },
+        { "min": 5, "max": 999, "reward": 650 }
+      ],
+      "A37": [
+        { "min": 1, "max": 2, "reward": 550 },
+        { "min": 3, "max": 4, "reward": 600 },
+        { "min": 5, "max": 999, "reward": 650 }
+      ],
+      "A27": [
+        { "min": 1, "max": 4, "reward": 350 },
+        { "min": 5, "max": 999, "reward": 450 }
+      ]
+    },
+    "kicker": {
+      "model": "A27",
+      "minUnits": 5,
+      "reward": 150
+    },
+    "flagshipGrid": [
+      { "achieveMin": 0.8,  "achieveMax": 0.8999, "dpSlab": "70k-100k", "reward": 350 },
+      { "achieveMin": 0.8,  "achieveMax": 0.8999, "dpSlab": "100k+",    "reward": 400 },
+      { "achieveMin": 0.9,  "achieveMax": 0.9999, "dpSlab": "70k-100k", "reward": 450 },
+      { "achieveMin": 0.9,  "achieveMax": 0.9999, "dpSlab": "100k+",    "reward": 500 },
+      { "achieveMin": 1.0,  "achieveMax": 1.1999, "dpSlab": "70k-100k", "reward": 550 },
+      { "achieveMin": 1.0,  "achieveMax": 1.1999, "dpSlab": "100k+",    "reward": 600 },
+      { "achieveMin": 1.2,  "achieveMax": 999,    "dpSlab": "70k-100k", "reward": 650 },
+      { "achieveMin": 1.2,  "achieveMax": 999,    "dpSlab": "100k+",    "reward": 750 }
+    ]
+  },
+  "wearables": {
+    "flatRewards": {
+      "Watch Ultra":    1200,
+      "Watch 8 Classic": 1200,
+      "Watch 8":        800,
+      "Watch 7 Classic": 800,
+      "Watch 7":        500,
+      "Other Watches":  500,
+      "Buds 4 Pro":     800,
+      "Buds 4":         600,
+      "Buds 3":         400,
+      "Buds 3 FE":      200,
+      "Other Buds":     200,
+      "Ring":           3000
+    },
+    "incrementalRewards": {
+      "Watch": [
+        { "min": 1, "max": 1, "reward": 300 },
+        { "min": 2, "max": 999, "reward": 500 }
+      ],
+      "Buds": [
+        { "min": 1, "max": 1, "reward": 100 },
+        { "min": 2, "max": 999, "reward": 200 }
+      ]
+    }
+  },
+  "tablets": {
+    "minimumGate": 2,
+    "slabs": [
+      { "dpMin": 70000, "dpMax": 999999, "reward": 800 },
+      { "dpMin": 40000, "dpMax": 69999,  "reward": 600 },
+      { "dpMin": 30000, "dpMax": 39999,  "reward": 500 },
+      { "dpMin": 20000, "dpMax": 29999,  "reward": 300 },
+      { "dpMin": 15000, "dpMax": 19999,  "reward": 200 },
+      { "dpMin": 10000, "dpMax": 14999,  "reward": 100 }
+    ],
+    "focusModels": {
+      "S11 Ultra": 1500,
+      "S11":       1000,
+      "S10 Plus":  1000,
+      "S10 FE":    750,
+      "S10 FE+":   750,
+      "S10 Lite":  500,
+      "A11 Plus":  400,
+      "A11":       250
+    },
+    "maximumEarning": 20000
+  },
+  "notebooks": {
+    "rewards": {
+      "GB6 Pro":    3000,
+      "GB6 Ultra":  3000,
+      "GB5 Pro":    3000,
+      "GB5 Pro 360": 3000,
+      "GB6":        2000,
+      "GB5 360":    2000,
+      "GB5":        1500,
+      "GB4 C7":     1500,
+      "GB4 Edge":   1000,
+      "GB4 C5":     1000,
+      "GB4 360":    1000,
+      "Other Models": 750
+    },
+    "additionalRewardGate": 10,
+    "additionalReward": 500,
+    "maximumEarning": 50000
+  },
+  "products": [
+    { "id": "A07-4-128",   "baseModel": "A07",       "model": "Galaxy A07 5G 4GB/128GB",    "category": "Smartphone", "series": "A", "dpSlab": "10k-15k" },
+    { "id": "A07-6-128",   "baseModel": "A07",       "model": "Galaxy A07 5G 6GB/128GB",    "category": "Smartphone", "series": "A", "dpSlab": "10k-15k" },
+
+    { "id": "A17-6-128",   "baseModel": "A17",       "model": "Galaxy A17 5G 6GB/128GB",    "category": "Smartphone", "series": "A", "dpSlab": "20k-30k" },
+    { "id": "A17-8-128",   "baseModel": "A17",       "model": "Galaxy A17 5G 8GB/128GB",    "category": "Smartphone", "series": "A", "dpSlab": "20k-30k" },
+    { "id": "A17-8-256",   "baseModel": "A17",       "model": "Galaxy A17 5G 8GB/256GB",    "category": "Smartphone", "series": "A", "dpSlab": "20k-30k" },
+
+    { "id": "F17-6-128",   "baseModel": "F17",       "model": "Galaxy F17 5G 6GB/128GB",    "category": "Smartphone", "series": "F", "dpSlab": "10k-15k" },
+    { "id": "F17-8-128",   "baseModel": "F17",       "model": "Galaxy F17 5G 8GB/128GB",    "category": "Smartphone", "series": "F", "dpSlab": "15k-20k" },
+
+    { "id": "A27-8-128",   "baseModel": "A27",       "model": "Galaxy A27 5G 8GB/128GB",    "category": "Smartphone", "series": "A", "dpSlab": "30k-40k" },
+    { "id": "A27-8-256",   "baseModel": "A27",       "model": "Galaxy A27 5G 8GB/256GB",    "category": "Smartphone", "series": "A", "dpSlab": "30k-40k" },
+
+    { "id": "A37-8-128",   "baseModel": "A37",       "model": "Galaxy A37 5G 8GB/128GB",    "category": "Smartphone", "series": "A", "dpSlab": "40k+" },
+    { "id": "A37-8-256",   "baseModel": "A37",       "model": "Galaxy A37 5G 8GB/256GB",    "category": "Smartphone", "series": "A", "dpSlab": "40k+" },
+    { "id": "A37-12-256",  "baseModel": "A37",       "model": "Galaxy A37 5G 12GB/256GB",   "category": "Smartphone", "series": "A", "dpSlab": "40k+" },
+
+    { "id": "A57-8-128",   "baseModel": "A57",       "model": "Galaxy A57 5G 8GB/128GB",    "category": "Smartphone", "series": "A", "dpSlab": "40k+" },
+    { "id": "A57-8-256",   "baseModel": "A57",       "model": "Galaxy A57 5G 8GB/256GB",    "category": "Smartphone", "series": "A", "dpSlab": "40k+" },
+    { "id": "A57-12-256",  "baseModel": "A57",       "model": "Galaxy A57 5G 12GB/256GB",   "category": "Smartphone", "series": "A", "dpSlab": "40k+" },
+
+    { "id": "S26-12-256",  "baseModel": "S26",       "model": "Galaxy S26 12GB/256GB",      "category": "Smartphone", "series": "S", "flagship": true, "dpSlab": "70k-100k" },
+    { "id": "S26-12-512",  "baseModel": "S26",       "model": "Galaxy S26 12GB/512GB",      "category": "Smartphone", "series": "S", "flagship": true, "dpSlab": "100k+" },
+
+    { "id": "S26U-12-256", "baseModel": "S26 Ultra", "model": "Galaxy S26 Ultra 12GB/256GB","category": "Smartphone", "series": "S", "flagship": true, "dpSlab": "100k+" },
+    { "id": "S26U-12-512", "baseModel": "S26 Ultra", "model": "Galaxy S26 Ultra 12GB/512GB","category": "Smartphone", "series": "S", "flagship": true, "dpSlab": "100k+" },
+    { "id": "S26U-16-1TB", "baseModel": "S26 Ultra", "model": "Galaxy S26 Ultra 16GB/1TB",  "category": "Smartphone", "series": "S", "flagship": true, "dpSlab": "100k+" },
+
+    { "id": "ZF7-256",     "baseModel": "Z Fold 7",  "model": "Galaxy Z Fold 7 (256GB)",    "category": "Smartphone", "series": "Z", "flagship": true, "dpSlab": "100k+" },
+    { "id": "ZF7-512",     "baseModel": "Z Fold 7",  "model": "Galaxy Z Fold 7 (512GB)",    "category": "Smartphone", "series": "Z", "flagship": true, "dpSlab": "100k+" },
+    { "id": "ZFl7-256",    "baseModel": "Z Flip 7",  "model": "Galaxy Z Flip 7 (256GB)",    "category": "Smartphone", "series": "Z", "flagship": true, "dpSlab": "100k+" },
+    { "id": "ZFl7-512",    "baseModel": "Z Flip 7",  "model": "Galaxy Z Flip 7 (512GB)",    "category": "Smartphone", "series": "Z", "flagship": true, "dpSlab": "100k+" },
+
+    { "id": "W8-40",  "baseModel": "Watch 8",         "model": "Watch 8 (40mm)",         "category": "Wearable", "subCategory": "Watch" },
+    { "id": "W8-44",  "baseModel": "Watch 8",         "model": "Watch 8 (44mm)",         "category": "Wearable", "subCategory": "Watch" },
+    { "id": "W8C",    "baseModel": "Watch 8 Classic", "model": "Watch 8 Classic",        "category": "Wearable", "subCategory": "Watch" },
+    { "id": "W7-40",  "baseModel": "Watch 7",         "model": "Watch 7 (40mm)",         "category": "Wearable", "subCategory": "Watch" },
+    { "id": "W7-44",  "baseModel": "Watch 7",         "model": "Watch 7 (44mm)",         "category": "Wearable", "subCategory": "Watch" },
+    { "id": "W7C",    "baseModel": "Watch 7 Classic", "model": "Watch 7 Classic",        "category": "Wearable", "subCategory": "Watch" },
+    { "id": "WU",     "baseModel": "Watch Ultra",     "model": "Watch Ultra",            "category": "Wearable", "subCategory": "Watch" },
+
+    { "id": "B4P",    "baseModel": "Buds 4 Pro", "model": "Buds 4 Pro",  "category": "Wearable", "subCategory": "Buds" },
+    { "id": "B4",     "baseModel": "Buds 4",     "model": "Buds 4",      "category": "Wearable", "subCategory": "Buds" },
+    { "id": "B3",     "baseModel": "Buds 3",     "model": "Buds 3",      "category": "Wearable", "subCategory": "Buds" },
+    { "id": "B3FE",   "baseModel": "Buds 3 FE",  "model": "Buds 3 FE",   "category": "Wearable", "subCategory": "Buds" },
+
+    { "id": "Ring",   "baseModel": "Ring",        "model": "Galaxy Ring", "category": "Wearable", "subCategory": "Other" },
+
+    { "id": "S11U-W",   "baseModel": "S11 Ultra", "model": "Tab S11 Ultra (WiFi)", "category": "Tablet", "dp": 95000 },
+    { "id": "S11U-5G",  "baseModel": "S11 Ultra", "model": "Tab S11 Ultra (5G)",   "category": "Tablet", "dp": 105000 },
+    { "id": "S11-W",    "baseModel": "S11",       "model": "Tab S11 (WiFi)",        "category": "Tablet", "dp": 75000 },
+    { "id": "S11-5G",   "baseModel": "S11",       "model": "Tab S11 (5G)",          "category": "Tablet", "dp": 85000 },
+    { "id": "S10P",     "baseModel": "S10 Plus",  "model": "Tab S10 Plus",          "category": "Tablet", "dp": 80000 },
+    { "id": "S10FE-W",  "baseModel": "S10 FE",    "model": "Tab S10 FE (WiFi)",     "category": "Tablet", "dp": 45000 },
+    { "id": "S10FE-5G", "baseModel": "S10 FE",    "model": "Tab S10 FE (5G)",       "category": "Tablet", "dp": 55000 },
+    { "id": "S10FEP",   "baseModel": "S10 FE+",   "model": "Tab S10 FE+",           "category": "Tablet", "dp": 60000 },
+    { "id": "S10L",     "baseModel": "S10 Lite",  "model": "Tab S10 Lite",          "category": "Tablet", "dp": 35000 },
+    { "id": "A11P",     "baseModel": "A11 Plus",  "model": "Tab A11 Plus",          "category": "Tablet", "dp": 24000 },
+    { "id": "A11-W",    "baseModel": "A11",       "model": "Tab A11 (WiFi)",        "category": "Tablet", "dp": 15000 },
+    { "id": "A11-5G",   "baseModel": "A11",       "model": "Tab A11 (5G)",          "category": "Tablet", "dp": 18000 },
+
+    { "id": "GB6P",    "baseModel": "GB6 Pro",    "model": "Galaxy Book6 Pro",      "category": "Notebook", "dp": 150000 },
+    { "id": "GB6U",    "baseModel": "GB6 Ultra",  "model": "Galaxy Book6 Ultra",    "category": "Notebook", "dp": 180000 },
+    { "id": "GB6",     "baseModel": "GB6",        "model": "Galaxy Book6",          "category": "Notebook", "dp": 95000 },
+    { "id": "GB5P",    "baseModel": "GB5 Pro",    "model": "Galaxy Book5 Pro",      "category": "Notebook", "dp": 130000 },
+    { "id": "GB5P360", "baseModel": "GB5 Pro 360","model": "Galaxy Book5 Pro 360",  "category": "Notebook", "dp": 140000 },
+    { "id": "GB5-360", "baseModel": "GB5 360",    "model": "Galaxy Book5 360",      "category": "Notebook", "dp": 110000 },
+    { "id": "GB5",     "baseModel": "GB5",        "model": "Galaxy Book5",          "category": "Notebook", "dp": 85000 },
+    { "id": "GB4E",    "baseModel": "GB4 Edge",   "model": "Galaxy Book4 Edge",     "category": "Notebook", "dp": 75000 },
+    { "id": "GB4C5",   "baseModel": "GB4 C5",     "model": "Galaxy Book4 C5",       "category": "Notebook", "dp": 65000 },
+    { "id": "GB4C7",   "baseModel": "GB4 C7",     "model": "Galaxy Book4 C7",       "category": "Notebook", "dp": 80000 },
+    { "id": "GB4-360", "baseModel": "GB4 360",    "model": "Galaxy Book4 360",      "category": "Notebook", "dp": 90000 }
+  ]
+}
