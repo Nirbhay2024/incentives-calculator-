@@ -160,8 +160,103 @@ export function ProductManager() {
         </div>
       </div>
 
-      {/* Product Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+      {/* Product Cards (mobile) */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((p) => {
+          const isEditing = editingId === p.id;
+          return (
+            <div key={p.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+              {isEditing ? (
+                <div className="space-y-2.5">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Model Name</label>
+                    <input
+                      type="text"
+                      value={editForm.model}
+                      onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
+                      className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Base Model</label>
+                    <input
+                      type="text"
+                      value={editForm.baseModel || ''}
+                      onChange={(e) => setEditForm({ ...editForm, baseModel: e.target.value })}
+                      className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">DP Slab</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 20k-30k"
+                        value={editForm.dpSlab || ''}
+                        onChange={(e) => setEditForm({ ...editForm, dpSlab: e.target.value })}
+                        className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">DP Price</label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 25000"
+                        value={editForm.dp || ''}
+                        onChange={(e) => setEditForm({ ...editForm, dp: parseInt(e.target.value) || 0 })}
+                        className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button onClick={() => setEditingId(null)} className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                      <X className="w-3.5 h-3.5" /> Cancel
+                    </button>
+                    <button onClick={handleSaveEdit} className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5" /> Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-semibold text-white text-sm truncate">{p.model} {p.flagship ? '⭐' : ''}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{p.baseModel || '—'}</div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button onClick={() => handleStartEdit(p)} className="p-1.5 text-slate-400 hover:text-indigo-300 transition">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      {p.status !== 'Archived' && (
+                        <button onClick={() => handleArchive(p)} className="p-1.5 text-slate-400 hover:text-red-400 transition">
+                          <Archive className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded">{p.category}</span>
+                    {(p.series || p.subCategory) && <span className="text-slate-400">{p.series || p.subCategory}</span>}
+                    <span className="text-indigo-300 font-semibold">
+                      {p.dpSlab ? `Slab: ${p.dpSlab}` : p.dp ? `₹${p.dp.toLocaleString()}` : '—'}
+                    </span>
+                    <span className={`ml-auto px-2 py-0.5 rounded-full font-bold ${p.status === 'Archived' ? 'bg-red-950 text-red-400 border border-red-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}`}>
+                      {p.status || 'Active'}
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <p className="text-center text-xs text-slate-500 py-8">No models match your filters.</p>
+        )}
+      </div>
+
+      {/* Product Table (desktop) */}
+      <div className="hidden md:block bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-slate-300">
             <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider border-b border-slate-800">

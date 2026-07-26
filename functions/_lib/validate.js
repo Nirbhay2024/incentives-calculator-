@@ -77,7 +77,7 @@ export function validateProductPayload(body) {
   const flagship = !!body.flagship;
   const status = body.status ? requireOneOf(body.status, 'status', ['Active', 'Archived']) : 'Active';
 
-  return { id, model, category, baseModel, series, subCategory, dp, flagship, status };
+  return { id, model, category, baseModel, series, subCategory, dpSlab, dp, flagship, status };
 }
 
 export function validateSchemePayload(body) {
