@@ -47,11 +47,14 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
   const tabletRule = rules.find(r => r.type === 'dp_range_slab' && r.category === 'Tablet');
   const notebookRule = rules.find(r => r.type === 'volume_bonus_gate' && r.category === 'Notebook');
 
-  const capRule = (category) => rules.find(r => r.type === 'category_payout_cap' && r.category === category);
-  const smartphoneCapRule = capRule('Smartphone');
-  const wearableCapRule = capRule('Wearable');
-  const tabletCapRule = capRule('Tablet');
-  const notebookCapRule = capRule('Notebook');
+  // Category payout caps — a rule may cover a single category or several
+  // combined under one shared ceiling (e.g. Wearable + Smartphone at
+  // ₹75,000 together). Applied last, once every category's total (including
+  // its own type-specific caps) is finalized — see the bottom of this function.
+  const categoryCapRules = rules
+    .filter(r => r.type === 'category_payout_cap' && r.maxPayout)
+    .map(r => ({ ...r, categories: (r.categories && r.categories.length ? r.categories : (r.category ? [r.category] : [])) }))
+    .filter(r => r.categories.length > 0);
 
   // ───────────────────────────────────────────────────────────────────────────
   // 1. SMARTPHONES - INNOVATIVE
@@ -289,25 +292,6 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
     });
   }
 
-  // Smartphone category payout cap (scales Innovative + Flagship down together
-  // so displayed subtotals still sum to the capped total).
-  if (smartphoneCapRule && smartphoneCapRule.maxPayout) {
-    const combined = innovativeTotal + flagshipTotal;
-    if (combined > smartphoneCapRule.maxPayout) {
-      const factor = combined > 0 ? smartphoneCapRule.maxPayout / combined : 0;
-      innovativeTotal = Math.round(innovativeTotal * factor);
-      flagshipTotal = Math.round(flagshipTotal * factor);
-      explanations.push({
-        ruleId: smartphoneCapRule.id,
-        name: smartphoneCapRule.name,
-        category: 'Smartphone',
-        status: 'capped',
-        amount: innovativeTotal + flagshipTotal,
-        text: `Smartphone earnings capped at maximum limit of ₹${smartphoneCapRule.maxPayout.toLocaleString()}.`
-      });
-    }
-  }
-
   // ───────────────────────────────────────────────────────────────────────────
   // 3. WEARABLES
   // ───────────────────────────────────────────────────────────────────────────
@@ -404,18 +388,6 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
     }
   }
 
-  if (wearableCapRule && wearableCapRule.maxPayout && wearableTotal > wearableCapRule.maxPayout) {
-    wearableTotal = wearableCapRule.maxPayout;
-    explanations.push({
-      ruleId: wearableCapRule.id,
-      name: wearableCapRule.name,
-      category: 'Wearable',
-      status: 'capped',
-      amount: wearableTotal,
-      text: `Wearable earnings capped at maximum limit of ₹${wearableCapRule.maxPayout.toLocaleString()}.`
-    });
-  }
-
   // ───────────────────────────────────────────────────────────────────────────
   // 4. TABLETS
   // ───────────────────────────────────────────────────────────────────────────
@@ -491,18 +463,6 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
     });
   }
 
-  if (tabletCapRule && tabletCapRule.maxPayout && tabletTotal > tabletCapRule.maxPayout) {
-    tabletTotal = tabletCapRule.maxPayout;
-    explanations.push({
-      ruleId: tabletCapRule.id,
-      name: tabletCapRule.name,
-      category: 'Tablet',
-      status: 'capped',
-      amount: tabletTotal,
-      text: `Tablet earnings capped at maximum limit of ₹${tabletCapRule.maxPayout.toLocaleString()}.`
-    });
-  }
-
   // ───────────────────────────────────────────────────────────────────────────
   // 5. NOTEBOOKS
   // ───────────────────────────────────────────────────────────────────────────
@@ -571,17 +531,41 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
     });
   }
 
-  if (notebookCapRule && notebookCapRule.maxPayout && notebookTotal > notebookCapRule.maxPayout) {
-    notebookTotal = notebookCapRule.maxPayout;
-    explanations.push({
-      ruleId: notebookCapRule.id,
-      name: notebookCapRule.name,
-      category: 'Notebook',
-      status: 'capped',
-      amount: notebookTotal,
-      text: `Notebook earnings capped at maximum limit of ₹${notebookCapRule.maxPayout.toLocaleString()}.`
-    });
+  // Category payout caps — applied last, after every category (including its
+  // own type-specific cap above) has its final total. A cap rule covering
+  // several categories shares one ceiling across their combined total, with
+  // each category scaled down proportionally if it's exceeded.
+  const categoryTotals = { Smartphone: innovativeTotal + flagshipTotal, Wearable: wearableTotal, Tablet: tabletTotal, Notebook: notebookTotal };
+  const preCapSmartphone = categoryTotals.Smartphone;
+
+  categoryCapRules.forEach((capRule) => {
+    const cats = capRule.categories.filter((c) => c in categoryTotals);
+    if (cats.length === 0) return;
+    const combined = cats.reduce((sum, c) => sum + categoryTotals[c], 0);
+    if (combined > capRule.maxPayout) {
+      const factor = combined > 0 ? capRule.maxPayout / combined : 0;
+      cats.forEach((c) => { categoryTotals[c] = Math.round(categoryTotals[c] * factor); });
+      explanations.push({
+        ruleId: capRule.id,
+        name: capRule.name,
+        category: cats.join(' + '),
+        status: 'capped',
+        amount: cats.reduce((sum, c) => sum + categoryTotals[c], 0),
+        text: `${cats.join(' + ')} combined earnings capped at maximum limit of ₹${capRule.maxPayout.toLocaleString()}.`
+      });
+    }
+  });
+
+  // Reflect any Smartphone-affecting cap back into the Innovative/Flagship
+  // split so those two displayed line items still sum to the capped total.
+  if (categoryTotals.Smartphone !== preCapSmartphone) {
+    const factor = preCapSmartphone > 0 ? categoryTotals.Smartphone / preCapSmartphone : 0;
+    innovativeTotal = Math.round(innovativeTotal * factor);
+    flagshipTotal = Math.round(flagshipTotal * factor);
   }
+  wearableTotal = categoryTotals.Wearable;
+  tabletTotal = categoryTotals.Tablet;
+  notebookTotal = categoryTotals.Notebook;
 
   // Sort nudges by highest financial impact first
   nudges.sort((a, b) => (b.impact || 0) - (a.impact || 0));

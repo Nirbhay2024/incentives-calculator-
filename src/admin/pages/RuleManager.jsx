@@ -10,7 +10,7 @@ async function loadRuleManagerData() {
   return { activeScheme, rules: rules.filter(r => (r.status || 'Active') !== 'Archived') };
 }
 
-export function RuleManager({ onCreateNewRule }) {
+export function RuleManager({ onCreateNewRule, onEditRule }) {
   const { data, loading, error, reload } = useAsyncData(loadRuleManagerData, []);
 
   const handleDelete = async (id) => {
@@ -87,7 +87,7 @@ export function RuleManager({ onCreateNewRule }) {
             <div>
               <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-indigo-950 text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-800/50">
-                  {rule.category || 'Global'}
+                  {(rule.categories && rule.categories.length ? rule.categories.join(' + ') : rule.category) || 'Global'}
                 </span>
                 <span className="text-[10px] font-bold bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-800">
                   ✅ {rule.status || 'Active'}
@@ -108,12 +108,20 @@ export function RuleManager({ onCreateNewRule }) {
 
             <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
               <span className="text-[11px] text-slate-500 font-mono">Type: {rule.type}</span>
-              <button
-                onClick={() => handleDelete(rule.id)}
-                className="text-xs text-slate-400 hover:text-red-400 font-semibold flex items-center gap-1 transition"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Delete
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => onEditRule(rule)}
+                  className="text-xs text-slate-400 hover:text-indigo-300 font-semibold flex items-center gap-1 transition"
+                >
+                  <Edit3 className="w-3.5 h-3.5" /> Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(rule.id)}
+                  className="text-xs text-slate-400 hover:text-red-400 font-semibold flex items-center gap-1 transition"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Delete
+                </button>
+              </div>
             </div>
           </div>
         ))}

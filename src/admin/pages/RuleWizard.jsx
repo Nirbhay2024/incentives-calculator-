@@ -102,10 +102,11 @@ function getConflictKey(r) {
     case 'kicker_bonus':
     case 'dp_range_slab':
     case 'volume_bonus_gate':
-    case 'category_payout_cap':
       return `${r.type}::${r.category}`;
     case 'target_gate':
       return `${r.type}::${r.segment}`;
+    // category_payout_cap is handled separately (Step 5) since it needs an
+    // overlap check across a list of categories, not an exact-key match.
     case 'focus_model_volume':
       return `${r.type}::${r.category}::${r.model}`;
     case 'flagship_achievement_grid':
@@ -173,7 +174,7 @@ function getDefaultFieldsForType(type, category, products) {
     case 'volume_bonus_gate':
       return { rewards: { 'Other Models': 750 }, additionalRewardGate: 10, additionalReward: 500, maximumEarning: 50000 };
     case 'category_payout_cap':
-      return { maxPayout: 50000 };
+      return { categories: category ? [category] : ['Smartphone'], maxPayout: 50000 };
     default:
       return {};
   }
@@ -312,36 +313,54 @@ function DpSlabEditor({ values, onChange }) {
   );
 }
 
-function KeyValueRewardEditor({ label, hint, values, onChange }) {
+// keyOptions, when provided, renders the key as a dropdown of real product
+// names/fallbacks instead of free text — avoids typos that would silently
+// never match a product in the rule engine's exact-key lookup.
+function KeyValueRewardEditor({ label, hint, values, onChange, keyOptions }) {
   const entries = Object.entries(values || {});
   const updateEntry = (i, field, val) => {
     const next = [...entries];
     next[i] = field === 'key' ? [val, next[i][1]] : [next[i][0], val];
     onChange(Object.fromEntries(next));
   };
-  const addEntry = () => onChange({ ...values, 'New Item': 0 });
+  const unusedOptions = keyOptions ? keyOptions.filter((o) => !(o in (values || {}))) : null;
+  const addEntry = () => {
+    const newKey = unusedOptions && unusedOptions.length > 0 ? unusedOptions[0] : 'New Item';
+    onChange({ ...values, [newKey]: 0 });
+  };
   const removeEntry = (key) => {
     const next = { ...values };
     delete next[key];
     onChange(next);
   };
+  const addDisabled = keyOptions && unusedOptions.length === 0;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="block text-xs font-medium text-slate-300">{label}</label>
-        <button type="button" onClick={addEntry} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add</button>
+        <button type="button" onClick={addEntry} disabled={addDisabled} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold disabled:opacity-40 disabled:hover:text-indigo-400">+ Add</button>
       </div>
       {hint && <p className="text-[11px] text-slate-500">{hint}</p>}
       {entries.map(([key, val], i) => (
         <div key={i} className="flex items-center gap-2">
-          <input type="text" value={key} onChange={(e) => updateEntry(i, 'key', e.target.value)} onFocus={selectOnFocus} className="flex-1 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white" />
+          {keyOptions ? (
+            <select value={key} onChange={(e) => updateEntry(i, 'key', e.target.value)} className="flex-1 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white">
+              {!keyOptions.includes(key) && <option value={key}>{key}</option>}
+              {keyOptions.filter((o) => o === key || !(o in (values || {}))).map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          ) : (
+            <input type="text" value={key} onChange={(e) => updateEntry(i, 'key', e.target.value)} onFocus={selectOnFocus} className="flex-1 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white" />
+          )}
           <span className="text-xs text-slate-500">₹</span>
           <input type="number" value={val} onChange={(e) => updateEntry(i, 'value', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
           <button type="button" onClick={() => removeEntry(key)} className="text-slate-500 hover:text-red-400 text-xs px-1">✕</button>
         </div>
       ))}
       {entries.length === 0 && <p className="text-xs text-slate-500">No entries yet — add one above.</p>}
+      {addDisabled && <p className="text-[11px] text-slate-500">All available models already have a reward configured.</p>}
     </div>
   );
 }
@@ -368,6 +387,11 @@ function FlagshipGridEditor({ rows, onChange }) {
           <span className="text-xs text-slate-500">to</span>
           <input type="number" step="0.01" value={row.achieveMax} onChange={(e) => update(i, 'achieveMax', parseFloat(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Max %" className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
           <select value={row.dpSlab} onChange={(e) => update(i, 'dpSlab', e.target.value)} className="bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white">
+            <option value="10k-15k">₹10k–15k</option>
+            <option value="15k-20k">₹15k–20k</option>
+            <option value="20k-30k">₹20k–30k</option>
+            <option value="30k-40k">₹30k–40k</option>
+            <option value="40k+">₹40k+</option>
             <option value="70k-100k">₹70k–100k</option>
             <option value="100k+">₹100k+</option>
           </select>
@@ -381,27 +405,31 @@ function FlagshipGridEditor({ rows, onChange }) {
   );
 }
 
-export function RuleWizard({ onComplete }) {
+export function RuleWizard({ onComplete, editingRule }) {
   const { data, loading, error } = useAsyncData(loadWizardData, []);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(editingRule ? 2 : 1);
   const [ruleData, setRuleData] = useState(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     if (data && !ruleData) {
-      setRuleData({
-        id: `rule-${Date.now()}`,
-        schemeId: data.schemeId,
-        name: '',
-        type: 'focus_model_volume',
-        category: 'Smartphone',
-        description: '',
-        status: 'Active',
-        ...getDefaultFieldsForType('focus_model_volume', 'Smartphone', data.products)
-      });
+      if (editingRule) {
+        setRuleData({ ...editingRule, schemeId: editingRule.schemeId || data.schemeId });
+      } else {
+        setRuleData({
+          id: `rule-${Date.now()}`,
+          schemeId: data.schemeId,
+          name: '',
+          type: 'focus_model_volume',
+          category: 'Smartphone',
+          description: '',
+          status: 'Active',
+          ...getDefaultFieldsForType('focus_model_volume', 'Smartphone', data.products)
+        });
+      }
     }
-  }, [data, ruleData]);
+  }, [data, ruleData, editingRule]);
 
   if (loading || !ruleData) {
     return (
@@ -420,6 +448,10 @@ export function RuleWizard({ onComplete }) {
   }
 
   const products = data.products;
+  const modelOptionsFor = (category) => Array.from(new Set(products.filter(p => p.category === category).map(p => p.baseModel || p.model)));
+  const wearableModelOptions = ['Other Watches', 'Other Buds', ...modelOptionsFor('Wearable')];
+  const notebookModelOptions = ['Other Models', ...modelOptionsFor('Notebook')];
+  const tabletModelOptions = modelOptionsFor('Tablet');
 
   const selectTemplate = (template) => {
     setRuleData((prev) => ({
@@ -460,7 +492,7 @@ export function RuleWizard({ onComplete }) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-bold flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-indigo-400" /> Create New Incentive Rule
+              <Sparkles className="w-5 h-5 text-indigo-400" /> {editingRule ? 'Edit Incentive Rule' : 'Create New Incentive Rule'}
             </h2>
             {step > 1 && (
               <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
@@ -547,6 +579,35 @@ export function RuleWizard({ onComplete }) {
             <p className="text-xs text-slate-400 bg-slate-800/60 border border-slate-700 rounded-xl p-3">
               This rule always applies to Flagship (S &amp; Z series) smartphones — no category selection needed.
             </p>
+          ) : ruleData.type === 'category_payout_cap' ? (
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1">Categories Covered by This Cap</label>
+              <p className="text-[11px] text-slate-500 mb-2">Select one category for a simple cap, or multiple to share a single combined ceiling across them (e.g. Wearable + Smartphone capped at ₹75,000 together).</p>
+              <div className="grid grid-cols-2 gap-2">
+                {['Smartphone', 'Wearable', 'Tablet', 'Notebook'].map((cat) => {
+                  const checked = (ruleData.categories || []).includes(cat);
+                  return (
+                    <label key={cat} className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-xs font-semibold cursor-pointer transition ${checked ? 'bg-indigo-950/80 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...(ruleData.categories || []), cat]
+                            : (ruleData.categories || []).filter((c) => c !== cat);
+                          setRuleData({ ...ruleData, categories: next });
+                        }}
+                        className="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0"
+                      />
+                      {cat}
+                    </label>
+                  );
+                })}
+              </div>
+              {(ruleData.categories || []).length === 0 && (
+                <p className="text-[11px] text-amber-400 mt-2">Select at least one category.</p>
+              )}
+            </div>
           ) : (
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1">Target Category</label>
@@ -690,8 +751,9 @@ export function RuleWizard({ onComplete }) {
           {ruleData.type === 'wearable_flat' && (
             <KeyValueRewardEditor
               label="Flat Reward Per Model"
-              hint="Key must match a product's exact Model Name or Base Model (see Product & DP Master). Use 'Other Watches' / 'Other Buds' as a fallback for models not listed here."
+              hint="Pick a model and set its flat ₹/unit reward. Use 'Other Watches' / 'Other Buds' to cover any model not listed individually."
               values={ruleData.flatRewards || {}} onChange={(flatRewards) => setRuleData({ ...ruleData, flatRewards })}
+              keyOptions={wearableModelOptions}
             />
           )}
 
@@ -717,8 +779,9 @@ export function RuleWizard({ onComplete }) {
               <DpRangeEditor rows={ruleData.slabs || []} onChange={(slabs) => setRuleData({ ...ruleData, slabs })} />
               <KeyValueRewardEditor
                 label="Focus Model Flat Rewards (overrides DP slab)"
-                hint="Optional: name a specific tablet model here to give it a fixed reward instead of using the DP slab table above."
+                hint="Optional: pick a specific tablet model here to give it a fixed reward instead of using the DP slab table above."
                 values={ruleData.focusModels || {}} onChange={(focusModels) => setRuleData({ ...ruleData, focusModels })}
+                keyOptions={tabletModelOptions}
               />
             </>
           )}
@@ -727,15 +790,16 @@ export function RuleWizard({ onComplete }) {
             <>
               <KeyValueRewardEditor
                 label="Per-Model Base Reward"
-                hint="Key must match a notebook's exact Model Name or Base Model. Use 'Other Models' as the fallback rate for anything not listed."
+                hint="Pick a model and set its base ₹/unit reward. Use 'Other Models' as the fallback rate for anything not listed."
                 values={ruleData.rewards || {}} onChange={(rewards) => setRuleData({ ...ruleData, rewards })}
+                keyOptions={notebookModelOptions}
               />
               <NumField label="Additional Bonus Per Unit (once gate met)" value={ruleData.additionalReward} onChange={(v) => setRuleData({ ...ruleData, additionalReward: v })} />
             </>
           )}
 
           {ruleData.type === 'category_payout_cap' && (
-            <NumField label={`Maximum Total Payout for ${ruleData.category} (₹)`} value={ruleData.maxPayout} onChange={(v) => setRuleData({ ...ruleData, maxPayout: v })} />
+            <NumField label={`Maximum Combined Payout for ${(ruleData.categories || []).join(' + ') || 'selected categories'} (₹)`} value={ruleData.maxPayout} onChange={(v) => setRuleData({ ...ruleData, maxPayout: v })} />
           )}
 
           <div className="flex justify-between pt-4">
@@ -752,12 +816,17 @@ export function RuleWizard({ onComplete }) {
       {/* STEP 5: Live English Preview & Save */}
       {step === 5 && (() => {
         const existingRules = (data.existingRules || []).filter(r => (r.status || 'Active') === 'Active' && r.id !== ruleData.id);
-        const myKey = getConflictKey(ruleData);
-        const conflict = myKey ? existingRules.find(r => getConflictKey(r) === myKey) : null;
+        const catsOf = (r) => (r.categories && r.categories.length ? r.categories : (r.category ? [r.category] : []));
+        const conflict = ruleData.type === 'category_payout_cap'
+          ? existingRules.find(r => r.type === 'category_payout_cap' && catsOf(r).some((c) => catsOf(ruleData).includes(c)))
+          : (() => {
+              const myKey = getConflictKey(ruleData);
+              return myKey ? existingRules.find(r => getConflictKey(r) === myKey) : null;
+            })();
 
         return (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white space-y-6">
-            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Step 5: Review & Publish Rule</h3>
+            <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Step 5: Review &amp; {editingRule ? 'Save Changes' : 'Publish Rule'}</h3>
             <Hint>Read the plain-English summary below out loud — it should describe exactly the incentive you intended. This is the last check before it goes live for every promoter.</Hint>
 
             <div>
@@ -810,7 +879,7 @@ export function RuleWizard({ onComplete }) {
                 className={`px-6 py-3 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg disabled:opacity-60 ${conflict ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-950/50' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-950/50'}`}
               >
                 {conflict ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-                {saving ? 'Publishing…' : conflict ? 'Override & Publish Rule' : 'Publish Rule to Scheme'}
+                {saving ? 'Saving…' : conflict ? 'Override & Publish Rule' : editingRule ? 'Save Changes' : 'Publish Rule to Scheme'}
               </button>
             </div>
           </div>

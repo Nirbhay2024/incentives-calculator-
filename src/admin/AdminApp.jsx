@@ -14,6 +14,7 @@ export default function AdminApp() {
   const [authed, setAuthed] = useState(null); // null = still checking
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [editingRule, setEditingRule] = useState(null);
 
   useEffect(() => {
     isAuthenticated().then(setAuthed);
@@ -118,8 +119,18 @@ export default function AdminApp() {
         {currentTab === 'dashboard' && <Dashboard onNavigate={(t) => setCurrentTab(t)} />}
         {currentTab === 'scheme' && <SchemeEditor />}
         {currentTab === 'products' && <ProductManager />}
-        {currentTab === 'rules' && <RuleManager onCreateNewRule={() => setCurrentTab('wizard')} />}
-        {currentTab === 'wizard' && <RuleWizard onComplete={() => setCurrentTab('rules')} />}
+        {currentTab === 'rules' && (
+          <RuleManager
+            onCreateNewRule={() => { setEditingRule(null); setCurrentTab('wizard'); }}
+            onEditRule={(rule) => { setEditingRule(rule); setCurrentTab('wizard'); }}
+          />
+        )}
+        {currentTab === 'wizard' && (
+          <RuleWizard
+            editingRule={editingRule}
+            onComplete={() => { setEditingRule(null); setCurrentTab('rules'); }}
+          />
+        )}
         {currentTab === 'tester' && <RuleTester />}
         {currentTab === 'announcements' && <Announcements />}
       </main>

@@ -64,7 +64,9 @@ export function ruleToEnglish(rule) {
     }
 
     case 'category_payout_cap': {
-      return `${rule.category || 'This category'} total payout is capped at a maximum of ₹${(rule.maxPayout || 0).toLocaleString()}, no matter how many units are sold.`;
+      const cats = rule.categories && rule.categories.length ? rule.categories : (rule.category ? [rule.category] : []);
+      const label = cats.length > 1 ? `${cats.join(' + ')} combined` : (cats[0] || 'This category');
+      return `${label} total payout is capped at a maximum of ₹${(rule.maxPayout || 0).toLocaleString()}, no matter how many units are sold.`;
     }
 
     default:
