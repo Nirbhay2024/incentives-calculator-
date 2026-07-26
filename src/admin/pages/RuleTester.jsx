@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Play, CheckCircle2, XCircle, Calculator, Zap, HelpCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { getProducts, getRules, getActiveScheme } from '../../lib/storage';
 import { useAsyncData } from '../../lib/useAsyncData';
+import { selectOnFocus } from '../../lib/uiHelpers';
 import { evaluateSchemeRules } from '../../lib/ruleEngine';
 
 async function loadTesterData() {
@@ -82,6 +83,7 @@ export function RuleTester() {
                 type="number"
                 value={testTargets.innovative}
                 onChange={(e) => setTestTargets({ ...testTargets, innovative: parseInt(e.target.value) || 1 })}
+                onFocus={selectOnFocus}
                 className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white"
               />
             </div>
@@ -91,6 +93,7 @@ export function RuleTester() {
                 type="number"
                 value={testTargets.flagship}
                 onChange={(e) => setTestTargets({ ...testTargets, flagship: parseInt(e.target.value) || 1 })}
+                onFocus={selectOnFocus}
                 className="w-full px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-lg text-xs text-white"
               />
             </div>

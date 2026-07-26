@@ -47,6 +47,12 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
   const tabletRule = rules.find(r => r.type === 'dp_range_slab' && r.category === 'Tablet');
   const notebookRule = rules.find(r => r.type === 'volume_bonus_gate' && r.category === 'Notebook');
 
+  const capRule = (category) => rules.find(r => r.type === 'category_payout_cap' && r.category === category);
+  const smartphoneCapRule = capRule('Smartphone');
+  const wearableCapRule = capRule('Wearable');
+  const tabletCapRule = capRule('Tablet');
+  const notebookCapRule = capRule('Notebook');
+
   // ───────────────────────────────────────────────────────────────────────────
   // 1. SMARTPHONES - INNOVATIVE
   // ───────────────────────────────────────────────────────────────────────────
@@ -283,6 +289,25 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
     });
   }
 
+  // Smartphone category payout cap (scales Innovative + Flagship down together
+  // so displayed subtotals still sum to the capped total).
+  if (smartphoneCapRule && smartphoneCapRule.maxPayout) {
+    const combined = innovativeTotal + flagshipTotal;
+    if (combined > smartphoneCapRule.maxPayout) {
+      const factor = combined > 0 ? smartphoneCapRule.maxPayout / combined : 0;
+      innovativeTotal = Math.round(innovativeTotal * factor);
+      flagshipTotal = Math.round(flagshipTotal * factor);
+      explanations.push({
+        ruleId: smartphoneCapRule.id,
+        name: smartphoneCapRule.name,
+        category: 'Smartphone',
+        status: 'capped',
+        amount: innovativeTotal + flagshipTotal,
+        text: `Smartphone earnings capped at maximum limit of ₹${smartphoneCapRule.maxPayout.toLocaleString()}.`
+      });
+    }
+  }
+
   // ───────────────────────────────────────────────────────────────────────────
   // 3. WEARABLES
   // ───────────────────────────────────────────────────────────────────────────
@@ -379,6 +404,18 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
     }
   }
 
+  if (wearableCapRule && wearableCapRule.maxPayout && wearableTotal > wearableCapRule.maxPayout) {
+    wearableTotal = wearableCapRule.maxPayout;
+    explanations.push({
+      ruleId: wearableCapRule.id,
+      name: wearableCapRule.name,
+      category: 'Wearable',
+      status: 'capped',
+      amount: wearableTotal,
+      text: `Wearable earnings capped at maximum limit of ₹${wearableCapRule.maxPayout.toLocaleString()}.`
+    });
+  }
+
   // ───────────────────────────────────────────────────────────────────────────
   // 4. TABLETS
   // ───────────────────────────────────────────────────────────────────────────
@@ -454,6 +491,18 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
     });
   }
 
+  if (tabletCapRule && tabletCapRule.maxPayout && tabletTotal > tabletCapRule.maxPayout) {
+    tabletTotal = tabletCapRule.maxPayout;
+    explanations.push({
+      ruleId: tabletCapRule.id,
+      name: tabletCapRule.name,
+      category: 'Tablet',
+      status: 'capped',
+      amount: tabletTotal,
+      text: `Tablet earnings capped at maximum limit of ₹${tabletCapRule.maxPayout.toLocaleString()}.`
+    });
+  }
+
   // ───────────────────────────────────────────────────────────────────────────
   // 5. NOTEBOOKS
   // ───────────────────────────────────────────────────────────────────────────
@@ -519,6 +568,18 @@ export function evaluateSchemeRules(bucket, targets, products, allRules) {
       status: 'capped',
       amount: notebookTotal,
       text: `Notebook earnings capped at maximum limit of ₹${notebookRule.maximumEarning.toLocaleString()}.`
+    });
+  }
+
+  if (notebookCapRule && notebookCapRule.maxPayout && notebookTotal > notebookCapRule.maxPayout) {
+    notebookTotal = notebookCapRule.maxPayout;
+    explanations.push({
+      ruleId: notebookCapRule.id,
+      name: notebookCapRule.name,
+      category: 'Notebook',
+      status: 'capped',
+      amount: notebookTotal,
+      text: `Notebook earnings capped at maximum limit of ₹${notebookCapRule.maxPayout.toLocaleString()}.`
     });
   }
 

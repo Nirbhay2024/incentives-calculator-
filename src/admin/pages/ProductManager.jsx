@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Package, Plus, Edit2, Archive, Check, X, Search, Filter, RefreshCw, AlertTriangle } from 'lucide-react';
 import { getProducts, saveProduct, archiveProduct } from '../../lib/storage';
 import { useAsyncData } from '../../lib/useAsyncData';
+import { selectOnFocus } from '../../lib/uiHelpers';
 
 export function ProductManager() {
   const { data: products, loading, error, reload } = useAsyncData(getProducts, []);
@@ -174,6 +175,7 @@ export function ProductManager() {
                       type="text"
                       value={editForm.model}
                       onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
+                      onFocus={selectOnFocus}
                       className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
                     />
                   </div>
@@ -183,6 +185,7 @@ export function ProductManager() {
                       type="text"
                       value={editForm.baseModel || ''}
                       onChange={(e) => setEditForm({ ...editForm, baseModel: e.target.value })}
+                      onFocus={selectOnFocus}
                       className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
                     />
                   </div>
@@ -194,6 +197,7 @@ export function ProductManager() {
                         placeholder="e.g. 20k-30k"
                         value={editForm.dpSlab || ''}
                         onChange={(e) => setEditForm({ ...editForm, dpSlab: e.target.value })}
+                        onFocus={selectOnFocus}
                         className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
                       />
                     </div>
@@ -204,6 +208,7 @@ export function ProductManager() {
                         placeholder="e.g. 25000"
                         value={editForm.dp || ''}
                         onChange={(e) => setEditForm({ ...editForm, dp: parseInt(e.target.value) || 0 })}
+                        onFocus={selectOnFocus}
                         className="w-full bg-slate-800 border border-slate-700 px-3 py-2 rounded-lg text-sm text-white"
                       />
                     </div>
@@ -281,6 +286,7 @@ export function ProductManager() {
                           type="text"
                           value={editForm.model}
                           onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
+                          onFocus={selectOnFocus}
                           className="bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white"
                         />
                       ) : (
@@ -294,6 +300,7 @@ export function ProductManager() {
                           type="text"
                           value={editForm.baseModel || ''}
                           onChange={(e) => setEditForm({ ...editForm, baseModel: e.target.value })}
+                          onFocus={selectOnFocus}
                           className="bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white"
                         />
                       ) : (
@@ -319,6 +326,7 @@ export function ProductManager() {
                             placeholder="DP Slab"
                             value={editForm.dpSlab || ''}
                             onChange={(e) => setEditForm({ ...editForm, dpSlab: e.target.value })}
+                            onFocus={selectOnFocus}
                             className="bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white w-24"
                           />
                           <input
@@ -326,6 +334,7 @@ export function ProductManager() {
                             placeholder="DP Price"
                             value={editForm.dp || ''}
                             onChange={(e) => setEditForm({ ...editForm, dp: parseInt(e.target.value) || 0 })}
+                            onFocus={selectOnFocus}
                             className="bg-slate-800 border border-slate-700 px-2 py-1 rounded text-xs text-white w-24"
                           />
                         </div>
@@ -433,6 +442,7 @@ export function ProductManager() {
                     placeholder="e.g. A or Watch"
                     value={newModel.series}
                     onChange={(e) => setNewModel({ ...newModel, series: e.target.value })}
+                    onFocus={selectOnFocus}
                     className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs"
                   />
                 </div>
@@ -462,6 +472,7 @@ export function ProductManager() {
                   placeholder="e.g. 25000"
                   value={newModel.dp}
                   onChange={(e) => setNewModel({ ...newModel, dp: parseInt(e.target.value) || 0 })}
+                  onFocus={selectOnFocus}
                   className="w-full px-3.5 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white text-xs"
                 />
               </div>

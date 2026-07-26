@@ -1,12 +1,12 @@
 import { json, withErrorHandling, readJsonBody } from '../../../_lib/http.js';
 import { requireAuth } from '../../../_lib/auth.js';
-import { mapProduct } from '../../../_lib/db.js';
+import { mapProduct, sortProducts } from '../../../_lib/db.js';
 import { validateProductPayload } from '../../../_lib/validate.js';
 
 export const onRequestGet = withErrorHandling(async ({ request, env }) => {
   await requireAuth(request, env.DB);
-  const { results } = await env.DB.prepare('SELECT * FROM products ORDER BY category, model').all();
-  return json((results || []).map(mapProduct));
+  const { results } = await env.DB.prepare('SELECT * FROM products').all();
+  return json(sortProducts((results || []).map(mapProduct)));
 });
 
 export const onRequestPut = withErrorHandling(async ({ request, env }) => {

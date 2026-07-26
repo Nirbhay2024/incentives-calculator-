@@ -32,6 +32,28 @@ export function mapProduct(row) {
   };
 }
 
+// Fixed display order (matches the promoter calculator's category sections)
+// rather than alphabetical, so Smartphones lead instead of Notebooks.
+const CATEGORY_ORDER = ['Smartphone', 'Wearable', 'Tablet', 'Notebook'];
+
+// Natural, numeric-aware comparator so "A7" sorts before "A17" (plain string
+// comparison would put "A17" first), and a newly added model like
+// "Galaxy Z Fold 8" lands right before "Galaxy Z Fold 8 Ultra" instead of
+// wherever insertion order happened to put it.
+const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' });
+
+// Groups by category (in CATEGORY_ORDER), then by base model + full model
+// name, so every variant of the same device sits together in a sane order.
+export function sortProducts(products) {
+  return [...products].sort((a, b) => {
+    const catDiff = CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category);
+    if (catDiff !== 0) return catDiff;
+    const baseDiff = collator.compare(a.baseModel || a.model, b.baseModel || b.model);
+    if (baseDiff !== 0) return baseDiff;
+    return collator.compare(a.model, b.model);
+  });
+}
+
 export function mapRule(row) {
   let data = {};
   try {

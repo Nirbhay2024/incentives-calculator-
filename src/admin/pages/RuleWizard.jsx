@@ -3,6 +3,7 @@ import { Sparkles, ArrowRight, ArrowLeft, Check, HelpCircle, AlertCircle, AlertT
 import { getProducts, saveRule, getActiveScheme, getRules } from '../../lib/storage';
 import { useAsyncData } from '../../lib/useAsyncData';
 import { ruleToEnglish } from '../../lib/rulePreview';
+import { selectOnFocus } from '../../lib/uiHelpers';
 
 async function loadWizardData() {
   const activeScheme = await getActiveScheme();
@@ -11,17 +12,84 @@ async function loadWizardData() {
 }
 
 const RULE_TEMPLATES = [
-  { id: 'focus_model_volume', icon: '🎯', title: 'Focus Model (Volume Slabs)', category: 'Smartphone', desc: 'Higher unit volume unlocks higher per-unit earnings (e.g. A57).' },
-  { id: 'kicker_bonus', icon: '💰', title: 'Kicker Bonus', category: 'Smartphone', desc: 'Sell N+ units to unlock a flat bonus per unit across all units (e.g. A27).' },
-  { id: 'dp_slab_base', icon: '📱', title: 'DP Slab Base Incentive', category: 'Smartphone', desc: 'Standard per-unit incentive based on phone DP price range.' },
-  { id: 'series_multiplier', icon: '⚡', title: 'Series Multiplier / Override', category: 'Smartphone', desc: 'Apply a multiplier to specific series (e.g. F & M series 0.5x).' },
-  { id: 'target_gate', icon: '🔒', title: 'Target Achievement Gate', category: 'Smartphone', desc: 'Lock or pro-rate earnings unless promoter hits 80%+ target.' },
-  { id: 'flagship_achievement_grid', icon: '⭐', title: 'Flagship Achievement Grid', category: 'Smartphone', desc: 'Matrix of rewards based on achievement % band and DP slab.' },
-  { id: 'wearable_flat', icon: '⌚', title: 'Wearables Flat Reward', category: 'Wearable', desc: 'Fixed reward per watch, buds, or ring model.' },
-  { id: 'volume_incremental', icon: '🎧', title: 'Volume Incremental Bonus', category: 'Wearable', desc: 'Bonus per unit when total category volume crosses threshold.' },
-  { id: 'dp_range_slab', icon: '📱', title: 'Tablet DP Slabs & Gate', category: 'Tablet', desc: 'Tablet rewards by DP slab with minimum quantity gate.' },
-  { id: 'volume_bonus_gate', icon: '💻', title: 'Notebook Reward & Gate', category: 'Notebook', desc: 'Notebook rewards per model + bonus gate when 10+ sold.' }
+  {
+    id: 'focus_model_volume', icon: '🎯', title: 'Focus Model (Volume Slabs)', category: 'Smartphone', group: 'Smartphone',
+    desc: 'Higher unit volume unlocks higher per-unit earnings, for ONE specific model you pick.',
+    when: 'Use when you want to push a specific model harder — e.g. "sell more A57 and earn more per unit".',
+    example: 'Example: A57 → ₹550/unit for 1–2 units, ₹650/unit for 5+ units.'
+  },
+  {
+    id: 'kicker_bonus', icon: '💰', title: 'Kicker Bonus', category: 'Smartphone', group: 'Smartphone',
+    desc: 'Crossing a unit threshold unlocks one flat bonus, applied to ALL units of that model.',
+    when: 'Use for a simple "sell N, get a bonus on all of them" incentive on one specific model.',
+    example: 'Example: Sell 5+ A27 → extra ₹150/unit bonus on all 5 (or however many) A27 units.'
+  },
+  {
+    id: 'dp_slab_base', icon: '📱', title: 'DP Slab Base Incentive', category: 'Smartphone', group: 'Smartphone',
+    desc: 'The standard, category-wide per-unit incentive for every smartphone, based on its price band (DP slab).',
+    when: 'Every scheme needs exactly one of these — it\'s the default payout smartphones fall back to.',
+    example: 'Example: ₹10k–15k phones → ₹30/unit, ₹40k+ phones → ₹400/unit.'
+  },
+  {
+    id: 'series_multiplier', icon: '⚡', title: 'Series Multiplier / Override', category: 'Smartphone', group: 'Smartphone',
+    desc: 'Scales the DP Slab base reward up or down for specific series letters (e.g. F, M).',
+    when: 'Use to pay a whole series less (or more) than the standard rate, with optional exceptions.',
+    example: 'Example: F & M series earn 50% of standard reward, except F17 which is exempt.'
+  },
+  {
+    id: 'target_gate', icon: '🔒', title: 'Target Achievement Gate', category: 'Smartphone', group: 'Smartphone',
+    desc: 'Locks or pro-rates a whole segment\'s (Innovative or Flagship) earnings until a target % is hit.',
+    when: 'Use to require promoters hit a minimum target before ANY payout in that segment unlocks.',
+    example: 'Example: Innovative payout stays ₹0 below 80% of target, then scales up to 100%.'
+  },
+  {
+    id: 'flagship_achievement_grid', icon: '⭐', title: 'Flagship Achievement Grid', category: 'Smartphone', group: 'Smartphone',
+    desc: 'A grid of ₹/unit rewards for Flagship (S & Z series) phones, based on target % achieved and price band.',
+    when: 'Use once per scheme to set how Flagship rewards scale as promoters exceed their target.',
+    example: 'Example: 100%+ achievement on a ₹100k+ phone → ₹600/unit.'
+  },
+  {
+    id: 'wearable_flat', icon: '⌚', title: 'Wearables Flat Reward', category: 'Wearable', group: 'Wearable',
+    desc: 'A fixed ₹ reward per unit for each wearable model (watches, buds, rings).',
+    when: 'Every scheme needs exactly one of these — it\'s the default payout for all wearables.',
+    example: 'Example: Watch Ultra → ₹1,200/unit, Buds 4 Pro → ₹800/unit.'
+  },
+  {
+    id: 'volume_incremental', icon: '🎧', title: 'Volume Incremental Bonus', category: 'Wearable', group: 'Wearable',
+    desc: 'Extra ₹/unit on top of the flat reward once total Watch or Buds volume crosses a threshold.',
+    when: 'Use to reward promoters for volume across an entire wearable sub-category, not one model.',
+    example: 'Example: 2+ Watches sold → +₹500/unit extra, on every watch sold.'
+  },
+  {
+    id: 'dp_range_slab', icon: '📱', title: 'Tablet DP Slabs & Gate', category: 'Tablet', group: 'Tablet',
+    desc: 'Tablet rewards based on price band, with a minimum-quantity gate and an optional payout cap.',
+    when: 'Use once per scheme — it\'s the default payout structure for tablets.',
+    example: 'Example: Must sell 2+ tablets to qualify; ₹20k–30k tablet → ₹300/unit.'
+  },
+  {
+    id: 'volume_bonus_gate', icon: '💻', title: 'Notebook Reward & Gate', category: 'Notebook', group: 'Notebook',
+    desc: 'Per-model notebook rewards, plus an extra bonus once a volume gate is crossed.',
+    when: 'Use once per scheme — it\'s the default payout structure for notebooks.',
+    example: 'Example: ₹750/unit base, +₹500/unit extra once 10+ notebooks are sold.'
+  },
+  {
+    id: 'category_payout_cap', icon: '🧢', title: 'Category Max Payout Cap', category: 'Smartphone', group: 'Global',
+    desc: 'A hard ceiling on the TOTAL payout for one category, no matter how many units are sold.',
+    when: 'Use to protect budget — e.g. cap total Wearable payout at ₹2,000 even if other rules would pay more.',
+    example: 'Example: Wearable total capped at ₹2,000 — earnings above that are simply not paid out.'
+  }
 ];
+
+const CATEGORY_GROUPS = ['Smartphone', 'Wearable', 'Tablet', 'Notebook', 'Global'];
+
+function Hint({ children }) {
+  return (
+    <div className="flex items-start gap-2.5 bg-indigo-950/40 border border-indigo-800/40 rounded-xl p-3.5 text-xs text-indigo-200 leading-relaxed">
+      <HelpCircle className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
+      <div>{children}</div>
+    </div>
+  );
+}
 
 // ── Conflict detection ──────────────────────────────────────────────────────
 // Mirrors the lookup keys ruleEngine.js uses (rules.find(...)) so we can tell
@@ -34,6 +102,7 @@ function getConflictKey(r) {
     case 'kicker_bonus':
     case 'dp_range_slab':
     case 'volume_bonus_gate':
+    case 'category_payout_cap':
       return `${r.type}::${r.category}`;
     case 'target_gate':
       return `${r.type}::${r.segment}`;
@@ -103,6 +172,8 @@ function getDefaultFieldsForType(type, category, products) {
       };
     case 'volume_bonus_gate':
       return { rewards: { 'Other Models': 750 }, additionalRewardGate: 10, additionalReward: 500, maximumEarning: 50000 };
+    case 'category_payout_cap':
+      return { maxPayout: 50000 };
     default:
       return {};
   }
@@ -118,6 +189,7 @@ function NumField({ label, value, onChange, step }) {
         step={step}
         value={value}
         onChange={(e) => onChange(step ? (parseFloat(e.target.value) || 0) : (parseInt(e.target.value) || 0))}
+        onFocus={selectOnFocus}
         className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
       />
     </div>
@@ -133,6 +205,7 @@ function TextField({ label, value, onChange, placeholder }) {
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={selectOnFocus}
         className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm"
       />
     </div>
@@ -140,7 +213,7 @@ function TextField({ label, value, onChange, placeholder }) {
 }
 
 // ── Reusable row editors for reward configuration ───────────────────────────
-function MinMaxRewardEditor({ label, rows, onChange }) {
+function MinMaxRewardEditor({ label, hint, rows, onChange }) {
   const update = (i, field, val) => {
     const next = [...rows];
     next[i] = { ...next[i], [field]: val };
@@ -155,13 +228,14 @@ function MinMaxRewardEditor({ label, rows, onChange }) {
         <label className="block text-xs font-medium text-slate-300">{label}</label>
         <button type="button" onClick={addRow} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add Tier</button>
       </div>
+      {hint && <p className="text-[11px] text-slate-500">{hint}</p>}
       {rows.map((row, i) => (
         <div key={i} className="flex items-center gap-2">
-          <input type="number" value={row.min} onChange={(e) => update(i, 'min', parseInt(e.target.value) || 0)} placeholder="Min" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-16" />
+          <input type="number" value={row.min} onChange={(e) => update(i, 'min', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Min" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-16" />
           <span className="text-xs text-slate-500">to</span>
-          <input type="number" value={row.max} onChange={(e) => update(i, 'max', parseInt(e.target.value) || 0)} placeholder="Max" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-16" />
+          <input type="number" value={row.max} onChange={(e) => update(i, 'max', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Max" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-16" />
           <span className="text-xs text-slate-500">→ ₹</span>
-          <input type="number" value={row.reward} onChange={(e) => update(i, 'reward', parseInt(e.target.value) || 0)} placeholder="Reward" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
+          <input type="number" value={row.reward} onChange={(e) => update(i, 'reward', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Reward" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
           <button type="button" onClick={() => removeRow(i)} className="text-slate-500 hover:text-red-400 text-xs px-1">✕</button>
         </div>
       ))}
@@ -185,14 +259,15 @@ function DpRangeEditor({ rows, onChange }) {
         <label className="block text-xs font-medium text-slate-300">DP Price Slabs</label>
         <button type="button" onClick={addRow} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add Slab</button>
       </div>
+      <p className="text-[11px] text-slate-500">Each row is a dealer-price (DP) range and the ₹/unit reward for tablets priced in that range. Ranges shouldn't overlap.</p>
       {rows.map((row, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="text-xs text-slate-500">₹</span>
-          <input type="number" value={row.dpMin} onChange={(e) => update(i, 'dpMin', parseInt(e.target.value) || 0)} placeholder="Min DP" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
+          <input type="number" value={row.dpMin} onChange={(e) => update(i, 'dpMin', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Min DP" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
           <span className="text-xs text-slate-500">to ₹</span>
-          <input type="number" value={row.dpMax} onChange={(e) => update(i, 'dpMax', parseInt(e.target.value) || 0)} placeholder="Max DP" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
+          <input type="number" value={row.dpMax} onChange={(e) => update(i, 'dpMax', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Max DP" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
           <span className="text-xs text-slate-500">→ ₹</span>
-          <input type="number" value={row.reward} onChange={(e) => update(i, 'reward', parseInt(e.target.value) || 0)} placeholder="Reward" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-20" />
+          <input type="number" value={row.reward} onChange={(e) => update(i, 'reward', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Reward" className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-20" />
           <button type="button" onClick={() => removeRow(i)} className="text-slate-500 hover:text-red-400 text-xs px-1">✕</button>
         </div>
       ))}
@@ -222,12 +297,13 @@ function DpSlabEditor({ values, onChange }) {
         <label className="block text-xs font-medium text-slate-300">DP Slab Rewards</label>
         <button type="button" onClick={addEntry} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add Slab</button>
       </div>
+      <p className="text-[11px] text-slate-500">The slab key must match a product's "DP Slab" field exactly (see Product & DP Master), e.g. 20k-30k.</p>
       {entries.map(([key, val], i) => (
         <div key={i} className="flex items-center gap-2">
-          <input type="text" value={key} onChange={(e) => updateEntry(i, 'key', e.target.value)} placeholder="e.g. 20k-30k" className="w-24 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
-          <input type="text" value={val.label || ''} onChange={(e) => updateEntry(i, 'label', e.target.value)} placeholder="Label" className="flex-1 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
+          <input type="text" value={key} onChange={(e) => updateEntry(i, 'key', e.target.value)} onFocus={selectOnFocus} placeholder="e.g. 20k-30k" className="w-24 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
+          <input type="text" value={val.label || ''} onChange={(e) => updateEntry(i, 'label', e.target.value)} onFocus={selectOnFocus} placeholder="Label" className="flex-1 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
           <span className="text-xs text-slate-500">₹</span>
-          <input type="number" value={val.reward} onChange={(e) => updateEntry(i, 'reward', parseInt(e.target.value) || 0)} className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
+          <input type="number" value={val.reward} onChange={(e) => updateEntry(i, 'reward', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
           <button type="button" onClick={() => removeEntry(key)} className="text-slate-500 hover:text-red-400 text-xs px-1">✕</button>
         </div>
       ))}
@@ -236,7 +312,7 @@ function DpSlabEditor({ values, onChange }) {
   );
 }
 
-function KeyValueRewardEditor({ label, values, onChange }) {
+function KeyValueRewardEditor({ label, hint, values, onChange }) {
   const entries = Object.entries(values || {});
   const updateEntry = (i, field, val) => {
     const next = [...entries];
@@ -256,11 +332,12 @@ function KeyValueRewardEditor({ label, values, onChange }) {
         <label className="block text-xs font-medium text-slate-300">{label}</label>
         <button type="button" onClick={addEntry} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add</button>
       </div>
+      {hint && <p className="text-[11px] text-slate-500">{hint}</p>}
       {entries.map(([key, val], i) => (
         <div key={i} className="flex items-center gap-2">
-          <input type="text" value={key} onChange={(e) => updateEntry(i, 'key', e.target.value)} className="flex-1 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white" />
+          <input type="text" value={key} onChange={(e) => updateEntry(i, 'key', e.target.value)} onFocus={selectOnFocus} className="flex-1 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white" />
           <span className="text-xs text-slate-500">₹</span>
-          <input type="number" value={val} onChange={(e) => updateEntry(i, 'value', parseInt(e.target.value) || 0)} className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
+          <input type="number" value={val} onChange={(e) => updateEntry(i, 'value', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} className="bg-slate-800 border border-slate-700 px-3 py-1.5 rounded-lg text-xs text-white w-24" />
           <button type="button" onClick={() => removeEntry(key)} className="text-slate-500 hover:text-red-400 text-xs px-1">✕</button>
         </div>
       ))}
@@ -284,17 +361,18 @@ function FlagshipGridEditor({ rows, onChange }) {
         <label className="block text-xs font-medium text-slate-300">Achievement × DP Slab Reward Grid</label>
         <button type="button" onClick={addRow} className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold">+ Add Row</button>
       </div>
+      <p className="text-[11px] text-slate-500">Min/Max are target achievement as decimals (0.8 = 80%). Each row pays its ₹/unit reward only to units in that achievement band and DP slab.</p>
       {rows.map((row, i) => (
         <div key={i} className="flex items-center gap-2 flex-wrap">
-          <input type="number" step="0.01" value={row.achieveMin} onChange={(e) => update(i, 'achieveMin', parseFloat(e.target.value) || 0)} placeholder="Min %" className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
+          <input type="number" step="0.01" value={row.achieveMin} onChange={(e) => update(i, 'achieveMin', parseFloat(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Min %" className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
           <span className="text-xs text-slate-500">to</span>
-          <input type="number" step="0.01" value={row.achieveMax} onChange={(e) => update(i, 'achieveMax', parseFloat(e.target.value) || 0)} placeholder="Max %" className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
+          <input type="number" step="0.01" value={row.achieveMax} onChange={(e) => update(i, 'achieveMax', parseFloat(e.target.value) || 0)} onFocus={selectOnFocus} placeholder="Max %" className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
           <select value={row.dpSlab} onChange={(e) => update(i, 'dpSlab', e.target.value)} className="bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white">
             <option value="70k-100k">₹70k–100k</option>
             <option value="100k+">₹100k+</option>
           </select>
           <span className="text-xs text-slate-500">→ ₹</span>
-          <input type="number" value={row.reward} onChange={(e) => update(i, 'reward', parseInt(e.target.value) || 0)} className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
+          <input type="number" value={row.reward} onChange={(e) => update(i, 'reward', parseInt(e.target.value) || 0)} onFocus={selectOnFocus} className="w-20 bg-slate-800 border border-slate-700 px-2 py-1.5 rounded-lg text-xs text-white" />
           <button type="button" onClick={() => removeRow(i)} className="text-slate-500 hover:text-red-400 text-xs px-1">✕</button>
         </div>
       ))}
@@ -407,26 +485,43 @@ export function RuleWizard({ onComplete }) {
 
       {/* STEP 1: Select Rule Type Template */}
       {step === 1 && (
-        <div className="space-y-4">
+        <div className="space-y-5">
           <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Step 1: What is this rule for?</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {RULE_TEMPLATES.map((t) => (
-              <div
-                key={t.id}
-                onClick={() => selectTemplate(t)}
-                className={`p-5 rounded-2xl border cursor-pointer transition-all ${ruleData.type === t.id ? 'bg-indigo-950/80 border-indigo-500 shadow-lg shadow-indigo-950/50' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{t.icon}</span>
-                  <div>
-                    <div className="font-bold text-white text-sm">{t.title}</div>
-                    <div className="text-xs text-indigo-400 font-semibold">{t.category}</div>
-                  </div>
+          <Hint>
+            Rules are grouped by the category they affect. Most schemes need exactly one "base" rule per
+            category (marked below) plus any number of extra bonuses on top. Not sure which one you need?
+            Read the "Use when" line and the example under each card — they describe the exact promoter
+            behavior the rule rewards.
+          </Hint>
+
+          {CATEGORY_GROUPS.map((group) => {
+            const templates = RULE_TEMPLATES.filter((t) => t.group === group);
+            if (templates.length === 0) return null;
+            return (
+              <div key={group} className="space-y-2.5">
+                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider pt-1">
+                  {group === 'Global' ? 'Cross-Category Rules' : `${group} Rules`}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {templates.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => selectTemplate(t)}
+                      className={`p-5 rounded-2xl border cursor-pointer transition-all ${ruleData.type === t.id ? 'bg-indigo-950/80 border-indigo-500 shadow-lg shadow-indigo-950/50' : 'bg-slate-900 border-slate-800 hover:border-slate-700'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{t.icon}</span>
+                        <div className="font-bold text-white text-sm">{t.title}</div>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-2.5">{t.desc}</p>
+                      <p className="text-[11px] text-indigo-300 mt-2 font-medium">Use when: {t.when}</p>
+                      <p className="text-[11px] text-slate-500 mt-1.5 italic">{t.example}</p>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-xs text-slate-400 mt-2">{t.desc}</p>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
 
@@ -434,6 +529,7 @@ export function RuleWizard({ onComplete }) {
       {step === 2 && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white space-y-4">
           <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Step 2: Which products does this apply to?</h3>
+          <Hint>This tells the calculator which products the rule affects. For rules that target one specific model, you'll also pick the exact base model below (e.g. A57, not the individual storage variants).</Hint>
 
           {ruleData.type === 'target_gate' ? (
             <div>
@@ -497,6 +593,7 @@ export function RuleWizard({ onComplete }) {
       {step === 3 && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white space-y-5">
           <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Step 3: Does this depend on any conditions?</h3>
+          <Hint>Conditions are gates a promoter must clear before the reward in Step 4 applies — like a minimum quantity or a minimum target %. Many rule types have none; you'll see a note below if so.</Hint>
 
           {ruleData.type === 'kicker_bonus' && (
             <NumField label="Minimum Units Required" value={ruleData.minUnits} onChange={(v) => setRuleData({ ...ruleData, minUnits: v })} />
@@ -545,7 +642,7 @@ export function RuleWizard({ onComplete }) {
             </>
           )}
 
-          {['dp_slab_base', 'focus_model_volume', 'flagship_achievement_grid', 'wearable_flat', 'volume_incremental'].includes(ruleData.type) && (
+          {['dp_slab_base', 'focus_model_volume', 'flagship_achievement_grid', 'wearable_flat', 'volume_incremental', 'category_payout_cap'].includes(ruleData.type) && (
             <p className="text-xs text-slate-400">No additional conditions for this rule type — configure reward values in the next step.</p>
           )}
 
@@ -564,13 +661,18 @@ export function RuleWizard({ onComplete }) {
       {step === 4 && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white space-y-5">
           <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Step 4: Enter the reward values</h3>
+          <Hint>These are the actual ₹ amounts promoters will earn — they drive the payout calculation directly, so double-check them against your scheme document before publishing.</Hint>
 
           {ruleData.type === 'kicker_bonus' && (
             <NumField label="Kicker Reward Per Unit (₹)" value={ruleData.rewardPerUnit} onChange={(v) => setRuleData({ ...ruleData, rewardPerUnit: v })} />
           )}
 
           {ruleData.type === 'focus_model_volume' && (
-            <MinMaxRewardEditor label="Volume Tier Slabs (units sold → ₹/unit)" rows={ruleData.slabs || []} onChange={(slabs) => setRuleData({ ...ruleData, slabs })} />
+            <MinMaxRewardEditor
+              label="Volume Tier Slabs (units sold → ₹/unit)"
+              hint="Each row is a unit-count range for this model. Higher ranges should pay more per unit to reward volume."
+              rows={ruleData.slabs || []} onChange={(slabs) => setRuleData({ ...ruleData, slabs })}
+            />
           )}
 
           {ruleData.type === 'dp_slab_base' && (
@@ -586,18 +688,24 @@ export function RuleWizard({ onComplete }) {
           )}
 
           {ruleData.type === 'wearable_flat' && (
-            <KeyValueRewardEditor label="Flat Reward Per Model" values={ruleData.flatRewards || {}} onChange={(flatRewards) => setRuleData({ ...ruleData, flatRewards })} />
+            <KeyValueRewardEditor
+              label="Flat Reward Per Model"
+              hint="Key must match a product's exact Model Name or Base Model (see Product & DP Master). Use 'Other Watches' / 'Other Buds' as a fallback for models not listed here."
+              values={ruleData.flatRewards || {}} onChange={(flatRewards) => setRuleData({ ...ruleData, flatRewards })}
+            />
           )}
 
           {ruleData.type === 'volume_incremental' && (
             <>
               <MinMaxRewardEditor
                 label="Watch Volume Tiers (total watches sold → extra ₹/unit)"
+                hint="This is an EXTRA bonus on top of the flat reward, based on total watches sold across all models."
                 rows={ruleData.incrementalRewards?.Watch || []}
                 onChange={(rows) => setRuleData({ ...ruleData, incrementalRewards: { ...ruleData.incrementalRewards, Watch: rows } })}
               />
               <MinMaxRewardEditor
                 label="Buds Volume Tiers (total buds sold → extra ₹/unit)"
+                hint="Same idea, but based on total Buds units sold across all Buds models."
                 rows={ruleData.incrementalRewards?.Buds || []}
                 onChange={(rows) => setRuleData({ ...ruleData, incrementalRewards: { ...ruleData.incrementalRewards, Buds: rows } })}
               />
@@ -607,15 +715,27 @@ export function RuleWizard({ onComplete }) {
           {ruleData.type === 'dp_range_slab' && (
             <>
               <DpRangeEditor rows={ruleData.slabs || []} onChange={(slabs) => setRuleData({ ...ruleData, slabs })} />
-              <KeyValueRewardEditor label="Focus Model Flat Rewards (overrides DP slab)" values={ruleData.focusModels || {}} onChange={(focusModels) => setRuleData({ ...ruleData, focusModels })} />
+              <KeyValueRewardEditor
+                label="Focus Model Flat Rewards (overrides DP slab)"
+                hint="Optional: name a specific tablet model here to give it a fixed reward instead of using the DP slab table above."
+                values={ruleData.focusModels || {}} onChange={(focusModels) => setRuleData({ ...ruleData, focusModels })}
+              />
             </>
           )}
 
           {ruleData.type === 'volume_bonus_gate' && (
             <>
-              <KeyValueRewardEditor label="Per-Model Base Reward" values={ruleData.rewards || {}} onChange={(rewards) => setRuleData({ ...ruleData, rewards })} />
+              <KeyValueRewardEditor
+                label="Per-Model Base Reward"
+                hint="Key must match a notebook's exact Model Name or Base Model. Use 'Other Models' as the fallback rate for anything not listed."
+                values={ruleData.rewards || {}} onChange={(rewards) => setRuleData({ ...ruleData, rewards })}
+              />
               <NumField label="Additional Bonus Per Unit (once gate met)" value={ruleData.additionalReward} onChange={(v) => setRuleData({ ...ruleData, additionalReward: v })} />
             </>
+          )}
+
+          {ruleData.type === 'category_payout_cap' && (
+            <NumField label={`Maximum Total Payout for ${ruleData.category} (₹)`} value={ruleData.maxPayout} onChange={(v) => setRuleData({ ...ruleData, maxPayout: v })} />
           )}
 
           <div className="flex justify-between pt-4">
@@ -638,6 +758,7 @@ export function RuleWizard({ onComplete }) {
         return (
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-white space-y-6">
             <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Step 5: Review & Publish Rule</h3>
+            <Hint>Read the plain-English summary below out loud — it should describe exactly the incentive you intended. This is the last check before it goes live for every promoter.</Hint>
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Rule Name</label>
@@ -645,6 +766,7 @@ export function RuleWizard({ onComplete }) {
                 type="text"
                 value={ruleData.name}
                 onChange={(e) => setRuleData({ ...ruleData, name: e.target.value })}
+                onFocus={selectOnFocus}
                 className="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white text-sm font-bold"
               />
             </div>

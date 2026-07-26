@@ -1,5 +1,5 @@
 import { json, withErrorHandling, HttpError } from '../_lib/http.js';
-import { mapScheme, mapProduct, mapRule } from '../_lib/db.js';
+import { mapScheme, mapProduct, mapRule, sortProducts } from '../_lib/db.js';
 
 // Public, read-only. Returns everything the promoter calculator needs in one
 // round trip: the active scheme, active products, and active rules.
@@ -10,7 +10,7 @@ export const onRequestGet = withErrorHandling(async ({ env }) => {
   if (!schemeRow) throw new HttpError('No active scheme configured.', 503);
 
   const { results: productRows } = await db
-    .prepare("SELECT * FROM products WHERE status != 'Archived' ORDER BY category, model")
+    .prepare("SELECT * FROM products WHERE status != 'Archived'")
     .all();
 
   const { results: ruleRows } = await db
@@ -20,7 +20,7 @@ export const onRequestGet = withErrorHandling(async ({ env }) => {
 
   return json({
     scheme: mapScheme(schemeRow),
-    products: (productRows || []).map(mapProduct),
+    products: sortProducts((productRows || []).map(mapProduct)),
     rules: (ruleRows || []).map(mapRule)
   });
 });

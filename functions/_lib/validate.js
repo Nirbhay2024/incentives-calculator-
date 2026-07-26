@@ -27,7 +27,7 @@ export function requireOneOf(value, field, options) {
 const RULE_TYPES = [
   'focus_model_volume', 'kicker_bonus', 'dp_slab_base', 'series_multiplier',
   'target_gate', 'flagship_achievement_grid', 'wearable_flat', 'volume_incremental',
-  'dp_range_slab', 'volume_bonus_gate'
+  'dp_range_slab', 'volume_bonus_gate', 'category_payout_cap'
 ];
 
 const CATEGORIES = ['Smartphone', 'Wearable', 'Tablet', 'Notebook'];

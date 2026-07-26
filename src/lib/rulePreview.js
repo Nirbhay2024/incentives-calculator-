@@ -63,6 +63,10 @@ export function ruleToEnglish(rule) {
       return `${rule.category || 'Category'} per-model earnings unlock an additional ₹${extra}/unit bonus on ALL units when selling ${gate}+ units${maxE}.`;
     }
 
+    case 'category_payout_cap': {
+      return `${rule.category || 'This category'} total payout is capped at a maximum of ₹${(rule.maxPayout || 0).toLocaleString()}, no matter how many units are sold.`;
+    }
+
     default:
       return rule.description || `${rule.name}: Custom rule configured by admin.`;
   }

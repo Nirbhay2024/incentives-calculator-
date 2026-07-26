@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { calculateIncentives } from './lib/calculator';
 import { getBootstrap } from './lib/storage';
 import { useAsyncData } from './lib/useAsyncData';
+import { selectOnFocus } from './lib/uiHelpers';
 import AdminApp from './admin/AdminApp';
 import {
   Calculator, Settings, ArrowRight, UserCircle, Star, Target,
@@ -101,14 +102,12 @@ function PromoterLogin({ onLogin, scheme }) {
             <label className="block text-xs sm:text-sm font-semibold text-blue-100 mb-1.5 sm:mb-2">Store Code</label>
             <input required type="text"
               className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 outline-none transition text-base sm:text-sm"
-              placeholder="e.g. BLR-001"
               value={storeCode} onChange={e => setStoreCode(e.target.value)} />
           </div>
           <div>
             <label className="block text-xs sm:text-sm font-semibold text-blue-100 mb-1.5 sm:mb-2">Your Name / SEC ID</label>
             <input required type="text"
               className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 outline-none transition text-base sm:text-sm"
-              placeholder="e.g. Ravi Kumar"
               value={name} onChange={e => setName(e.target.value)} />
           </div>
           <button type="submit"
@@ -146,6 +145,7 @@ function ProductRow({ product, qty, onIncrement, onDecrement, onSet }) {
         </button>
         <input type="number" min="0" value={qty || ''}
           onChange={e => onSet(parseInt(e.target.value) || 0)}
+          onFocus={selectOnFocus}
           placeholder="0"
           className={`w-14 sm:w-12 h-10 sm:h-auto text-center text-base sm:text-sm font-bold rounded-lg border py-1 outline-none transition
             ${hasQty ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-700'}`} />
@@ -159,8 +159,8 @@ function ProductRow({ product, qty, onIncrement, onDecrement, onSet }) {
 }
 
 // ── Category Section ──────────────────────────────────────────────────────────
-function CategorySection({ category, products, bucket, onIncrement, onDecrement, onSet }) {
-  const [open, setOpen] = useState(true);
+function CategorySection({ category, products, bucket, onIncrement, onDecrement, onSet, defaultOpen }) {
+  const [open, setOpen] = useState(!!defaultOpen);
   const meta = CATEGORY_META[category] || {};
   const Icon = meta.icon || Smartphone;
   const hasAny = products.some(p => (bucket[p.id] || 0) > 0);
@@ -174,6 +174,7 @@ function CategorySection({ category, products, bucket, onIncrement, onDecrement,
             <Icon className={`w-4 h-4 sm:w-4.5 sm:h-4.5 ${hasAny ? 'text-white' : 'text-slate-500'}`} />
           </div>
           <span className="font-bold text-sm sm:text-base text-slate-800">{meta.label || category}</span>
+          <span className="text-[10px] sm:text-xs text-slate-400 font-medium">{products.length} models</span>
           {hasAny && (
             <span className="text-[10px] sm:text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full font-semibold">
               {products.filter(p => (bucket[p.id] || 0) > 0).length} selected
@@ -310,14 +311,14 @@ function ResultSidebar({ user, results, bucket, targetInnovative, targetFlagship
             <label className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Target className="w-3.5 h-3.5" />Innovative Target</label>
             <input type="number" min="1"
               className="w-16 text-center text-base sm:text-sm font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 sm:py-1 outline-none focus:ring-2 focus:ring-blue-400"
-              value={targetInnovative} onChange={e => setTargetInnovative(parseInt(e.target.value) || 1)} />
+              value={targetInnovative} onChange={e => setTargetInnovative(parseInt(e.target.value) || 1)} onFocus={selectOnFocus} />
           </div>
           <ProgressBar label="Innovative" value={breakdown.innovativeSales} target={targetInnovative} achievement={breakdown.innAchievement} />
           <div className="flex items-center justify-between gap-3 pt-1">
             <label className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Star className="w-3.5 h-3.5" />Flagship Target</label>
             <input type="number" min="1"
               className="w-16 text-center text-base sm:text-sm font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 sm:py-1 outline-none focus:ring-2 focus:ring-blue-400"
-              value={targetFlagship} onChange={e => setTargetFlagship(parseInt(e.target.value) || 1)} />
+              value={targetFlagship} onChange={e => setTargetFlagship(parseInt(e.target.value) || 1)} onFocus={selectOnFocus} />
           </div>
           <ProgressBar label="Flagship" value={breakdown.flagshipSales} target={targetFlagship} achievement={breakdown.flagAchievement} />
         </div>
@@ -441,10 +442,16 @@ function PromoterCalculator({ user, bootstrap }) {
 
         {/* LEFT: Model Catalog */}
         <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 w-full">
-          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-sm">
-            <p className="text-xs sm:text-sm text-slate-500">
-              <span className="font-semibold text-slate-700">How to use:</span> Set your Innovative & Flagship targets on the right (or scroll down), then enter units sold for each model below. Your payout updates instantly.
+          <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center gap-3">
+            <p className="text-xs sm:text-sm text-slate-500 flex-1">
+              <span className="font-semibold text-slate-700">How to use:</span> Tap a category below to open it, then enter units sold for each model. Your payout updates instantly.
             </p>
+            <button
+              onClick={scrollToSummary}
+              className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 transition shadow-sm"
+            >
+              View My Incentive <ChevronDown className="w-4 h-4" />
+            </button>
           </div>
 
           {catOrder.map(cat => categories[cat] ? (
