@@ -66,6 +66,20 @@ function FullScreenLoader({ message = 'Loading…' }) {
   );
 }
 
+function DisclaimerFooter() {
+  return (
+    <footer className="max-w-7xl mx-auto px-3 sm:px-4 pt-2 pb-4">
+      <p className="text-[10px] leading-relaxed text-slate-400 text-center border-t border-slate-200 pt-3">
+        This calculator provides an unofficial estimate for planning purposes only and does not represent a confirmed,
+        approved, or final incentive payout. Actual payouts are determined solely by the company's official records and
+        incentive policy, are subject to verification and management approval, and may differ from the figures shown
+        here. This tool creates no entitlement, obligation, or contractual right to any payment. For official payout
+        figures, refer to your company-issued incentive statement.
+      </p>
+    </footer>
+  );
+}
+
 function FullScreenError({ message, onRetry }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 flex flex-col items-center justify-center gap-4 p-4 text-center">
@@ -159,6 +173,14 @@ function PromoterLogin({ onLogin, scheme }) {
             Start Calculating <ArrowRight className="w-5 h-5" />
           </button>
         </form>
+
+        <p className="text-[10px] leading-relaxed text-blue-300/60 text-center mt-5">
+          This calculator provides an unofficial estimate for planning purposes only and does not represent a
+          confirmed, approved, or final incentive payout. Actual payouts are determined solely by the company's
+          official records and incentive policy, are subject to verification and management approval, and may
+          differ from the figures shown here. This tool creates no entitlement, obligation, or contractual right
+          to any payment.
+        </p>
       </div>
     </div>
   );
@@ -299,7 +321,7 @@ function SECExplanationPanel({ explanations }) {
       >
         <div className="flex items-center gap-2 text-slate-800 font-semibold text-xs">
           <HelpCircle className="w-4 h-4 text-blue-600" />
-          <span>Why did I earn this payout? (Rule Explanations)</span>
+          <span>Why this estimate? (Rule Explanations)</span>
         </div>
         {showExplanation ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
       </button>
@@ -372,7 +394,7 @@ function ResultSidebar({ user, results, bucket, targetInnovative, targetFlagship
       <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-5 sm:p-6 text-white shadow-xl shadow-blue-900/30 relative overflow-hidden">
         <div className="absolute -top-6 -right-6 w-28 h-28 bg-white/10 rounded-full blur-2xl pointer-events-none" />
         <div className="relative z-10">
-          <div className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">Total Incentive</div>
+          <div className="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-1">Estimated Incentive</div>
           <div className="text-3xl sm:text-4xl font-black tracking-tight mb-4 sm:mb-5">₹{totalIncentive.toLocaleString('en-IN')}</div>
 
           <div className="space-y-2 text-xs sm:text-sm">
@@ -489,7 +511,7 @@ function PromoterCalculator({ user, bootstrap }) {
         <div className="flex-1 min-w-0 space-y-3 sm:space-y-4 w-full">
           <div className="bg-white border border-slate-200 rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row sm:items-center gap-3">
             <p className="text-xs sm:text-sm text-slate-500 flex-1">
-              <span className="font-semibold text-slate-700">How to use:</span> Tap a category below to open it, then enter units sold for each model. Your payout updates instantly.
+              <span className="font-semibold text-slate-700">How to use:</span> Tap a category below to open it, then enter units sold for each model. Your estimated payout updates instantly.
             </p>
             <button
               onClick={scrollToSummary}
@@ -528,10 +550,12 @@ function PromoterCalculator({ user, bootstrap }) {
         </div>
       </div>
 
+      <DisclaimerFooter />
+
       {/* Floating Mobile Bottom Total Bar (Smartphones only) */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-3 z-40 flex items-center justify-between shadow-2xl">
         <div>
-          <span className="text-[10px] text-slate-400 uppercase font-semibold block">Total Incentive</span>
+          <span className="text-[10px] text-slate-400 uppercase font-semibold block">Estimated Incentive</span>
           <span className="text-xl font-black text-white">₹{results.totalIncentive.toLocaleString('en-IN')}</span>
         </div>
         <button
