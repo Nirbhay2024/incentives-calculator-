@@ -4,6 +4,7 @@ const PASS_KEY = 'incentives_admin_hash';
 const LOCK_KEY = 'incentives_admin_lockout';
 const SESSION_KEY = 'incentives_admin_session';
 const DEFAULT_PASS = 'admin1234';
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
 
 // Initialize default hash if not present
 export function initAuth() {
@@ -61,7 +62,7 @@ export function verifyPassword(password) {
   if (isMatch) {
     resetFailedAttempts();
     const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    sessionStorage.setItem(SESSION_KEY, token);
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token, expiresAt: Date.now() + SESSION_TTL_MS }));
     return { success: true };
   } else {
     const remaining = recordFailedAttempt();
@@ -83,7 +84,19 @@ export function updatePassword(oldPassword, newPassword) {
 }
 
 export function isAuthenticated() {
-  return !!sessionStorage.getItem(SESSION_KEY);
+  const raw = sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return false;
+  try {
+    const { expiresAt } = JSON.parse(raw);
+    if (!expiresAt || Date.now() > expiresAt) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return false;
+    }
+    return true;
+  } catch {
+    sessionStorage.removeItem(SESSION_KEY);
+    return false;
+  }
 }
 
 export function logout() {

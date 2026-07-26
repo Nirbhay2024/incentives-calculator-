@@ -5,10 +5,10 @@ import { ruleToEnglish } from '../../lib/rulePreview';
 
 export function RuleManager({ onCreateNewRule }) {
   const activeScheme = getActiveScheme();
-  const [rules, setRules] = useState(() => getRules(activeScheme.id));
+  const [rules, setRules] = useState(() => getRules(activeScheme.id).filter(r => (r.status || 'Active') !== 'Archived'));
 
   const refreshRules = () => {
-    setRules(getRules(activeScheme.id));
+    setRules(getRules(activeScheme.id).filter(r => (r.status || 'Active') !== 'Archived'));
   };
 
   const handleDelete = (id) => {

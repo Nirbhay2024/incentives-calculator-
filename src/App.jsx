@@ -75,14 +75,14 @@ function PromoterLogin({ onLogin }) {
           <div>
             <label className="block text-xs sm:text-sm font-semibold text-blue-100 mb-1.5 sm:mb-2">Store Code</label>
             <input required type="text"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 outline-none transition text-sm"
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 outline-none transition text-base sm:text-sm"
               placeholder="e.g. BLR-001"
               value={storeCode} onChange={e => setStoreCode(e.target.value)} />
           </div>
           <div>
             <label className="block text-xs sm:text-sm font-semibold text-blue-100 mb-1.5 sm:mb-2">Your Name / SEC ID</label>
             <input required type="text"
-              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 outline-none transition text-sm"
+              className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-300 focus:ring-2 focus:ring-blue-400 outline-none transition text-base sm:text-sm"
               placeholder="e.g. Ravi Kumar"
               value={name} onChange={e => setName(e.target.value)} />
           </div>
@@ -114,19 +114,19 @@ function ProductRow({ product, qty, onIncrement, onDecrement, onSet }) {
         {slabLabel && <span className="text-[11px] text-slate-400 block mt-0.5">{slabLabel}</span>}
       </div>
 
-      <div className="flex items-center gap-1.5 flex-shrink-0">
+      <div className="flex items-center gap-2 sm:gap-1.5 flex-shrink-0">
         <button onClick={onDecrement} disabled={qty === 0}
-          className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-slate-200 hover:bg-slate-300 disabled:opacity-30 flex items-center justify-center transition-colors active:scale-95">
-          <Minus className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-slate-700" />
+          className="w-10 h-10 sm:w-7 sm:h-7 rounded-lg bg-slate-200 hover:bg-slate-300 disabled:opacity-30 flex items-center justify-center transition-colors active:scale-95">
+          <Minus className="w-5 h-5 sm:w-3.5 sm:h-3.5 text-slate-700" />
         </button>
         <input type="number" min="0" value={qty || ''}
           onChange={e => onSet(parseInt(e.target.value) || 0)}
           placeholder="0"
-          className={`w-12 sm:w-12 text-center text-xs sm:text-sm font-bold rounded-lg border py-1 outline-none transition
+          className={`w-14 sm:w-12 h-10 sm:h-auto text-center text-base sm:text-sm font-bold rounded-lg border py-1 outline-none transition
             ${hasQty ? 'bg-blue-100 border-blue-300 text-blue-800' : 'bg-slate-100 border-slate-200 text-slate-700'}`} />
         <button onClick={onIncrement}
-          className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-colors shadow-sm active:scale-95">
-          <Plus className="w-4 h-4 sm:w-3.5 sm:h-3.5 text-white" />
+          className="w-10 h-10 sm:w-7 sm:h-7 rounded-lg bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-colors shadow-sm active:scale-95">
+          <Plus className="w-5 h-5 sm:w-3.5 sm:h-3.5 text-white" />
         </button>
       </div>
     </div>
@@ -284,14 +284,14 @@ function ResultSidebar({ user, results, bucket, targetInnovative, targetFlagship
           <div className="flex items-center justify-between gap-3">
             <label className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Target className="w-3.5 h-3.5" />Innovative Target</label>
             <input type="number" min="1"
-              className="w-16 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-16 text-center text-base sm:text-sm font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 sm:py-1 outline-none focus:ring-2 focus:ring-blue-400"
               value={targetInnovative} onChange={e => setTargetInnovative(parseInt(e.target.value) || 1)} />
           </div>
           <ProgressBar label="Innovative" value={breakdown.innovativeSales} target={targetInnovative} achievement={breakdown.innAchievement} />
           <div className="flex items-center justify-between gap-3 pt-1">
             <label className="text-xs font-semibold text-slate-500 flex items-center gap-1"><Star className="w-3.5 h-3.5" />Flagship Target</label>
             <input type="number" min="1"
-              className="w-16 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-16 text-center text-base sm:text-sm font-bold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 sm:py-1 outline-none focus:ring-2 focus:ring-blue-400"
               value={targetFlagship} onChange={e => setTargetFlagship(parseInt(e.target.value) || 1)} />
           </div>
           <ProgressBar label="Flagship" value={breakdown.flagshipSales} target={targetFlagship} achievement={breakdown.flagAchievement} />

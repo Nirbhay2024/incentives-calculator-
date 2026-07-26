@@ -1,6 +1,7 @@
 import { ruleToEnglish } from './rulePreview';
 
-export function evaluateSchemeRules(bucket, targets, products, rules) {
+export function evaluateSchemeRules(bucket, targets, products, allRules) {
+  const rules = allRules.filter(r => (r.status || 'Active') === 'Active');
   let nudges = [];
   let explanations = [];
 

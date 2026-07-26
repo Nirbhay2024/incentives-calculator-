@@ -78,9 +78,6 @@ export default function AdminLogin({ onLoginSuccess }) {
                 />
                 <KeyRound className="w-4 h-4 text-slate-500 absolute right-3.5 top-3.5" />
               </div>
-              <p className="text-[11px] text-slate-500 mt-2">
-                Default password: <code className="bg-slate-800 text-indigo-300 px-1.5 py-0.5 rounded">admin1234</code>
-              </p>
             </div>
 
             <button
