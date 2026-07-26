@@ -1,22 +1,41 @@
-import React, { useState } from 'react';
-import { Zap, Plus, Trash2, Edit3, AlertTriangle, Eye, ShieldCheck } from 'lucide-react';
+import React from 'react';
+import { Zap, Plus, Trash2, Edit3, AlertTriangle, Eye, ShieldCheck, RefreshCw } from 'lucide-react';
 import { getRules, deleteRule, getActiveScheme } from '../../lib/storage';
+import { useAsyncData } from '../../lib/useAsyncData';
 import { ruleToEnglish } from '../../lib/rulePreview';
 
+async function loadRuleManagerData() {
+  const activeScheme = await getActiveScheme();
+  const rules = await getRules(activeScheme.id);
+  return { activeScheme, rules: rules.filter(r => (r.status || 'Active') !== 'Archived') };
+}
+
 export function RuleManager({ onCreateNewRule }) {
-  const activeScheme = getActiveScheme();
-  const [rules, setRules] = useState(() => getRules(activeScheme.id).filter(r => (r.status || 'Active') !== 'Archived'));
+  const { data, loading, error, reload } = useAsyncData(loadRuleManagerData, []);
 
-  const refreshRules = () => {
-    setRules(getRules(activeScheme.id).filter(r => (r.status || 'Active') !== 'Archived'));
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this rule from the active scheme?')) return;
+    await deleteRule(id);
+    reload();
   };
 
-  const handleDelete = (id) => {
-    if (confirm('Delete this rule from the active scheme?')) {
-      deleteRule(id);
-      refreshRules();
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-950/60 border border-red-800/60 rounded-2xl text-red-300 text-sm flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4" /> {error}
+      </div>
+    );
+  }
+
+  const { activeScheme, rules } = data;
 
   // Basic Conflict check: duplicate names or identical focus models
   const focusModelsSeen = new Set();

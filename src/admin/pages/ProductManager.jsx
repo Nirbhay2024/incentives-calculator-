@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Package, Plus, Edit2, Archive, Check, X, Search, Filter } from 'lucide-react';
+import { Package, Plus, Edit2, Archive, Check, X, Search, Filter, RefreshCw, AlertTriangle } from 'lucide-react';
 import { getProducts, saveProduct, archiveProduct } from '../../lib/storage';
+import { useAsyncData } from '../../lib/useAsyncData';
 
 export function ProductManager() {
-  const [products, setProducts] = useState(() => getProducts(true));
+  const { data: products, loading, error, reload } = useAsyncData(getProducts, []);
   const [filterCategory, setFilterCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [showArchived, setShowArchived] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [busy, setBusy] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newModel, setNewModel] = useState({
@@ -24,46 +26,72 @@ export function ProductManager() {
     status: 'Active'
   });
 
-  const refreshProducts = () => {
-    setProducts(getProducts(true));
-  };
-
   const handleStartEdit = (p) => {
     setEditingId(p.id);
     setEditForm({ ...p });
   };
 
-  const handleSaveEdit = () => {
-    saveProduct(editForm);
-    setEditingId(null);
-    refreshProducts();
-  };
-
-  const handleArchive = (id) => {
-    if (confirm('Are you sure you want to archive this model?')) {
-      archiveProduct(id);
-      refreshProducts();
+  const handleSaveEdit = async () => {
+    setBusy(true);
+    try {
+      await saveProduct(editForm);
+      setEditingId(null);
+      reload();
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleAddSubmit = (e) => {
-    e.preventDefault();
-    const finalId = newModel.id || `${newModel.baseModel || newModel.model.replaceAll(' ', '-')}-${Date.now().toString(36)}`;
-    saveProduct({ ...newModel, id: finalId });
-    setShowAddModal(false);
-    setNewModel({
-      id: '',
-      model: '',
-      baseModel: '',
-      category: 'Smartphone',
-      series: 'A',
-      dpSlab: '20k-30k',
-      dp: 25000,
-      flagship: false,
-      status: 'Active'
-    });
-    refreshProducts();
+  const handleArchive = async (product) => {
+    if (!confirm('Are you sure you want to archive this model?')) return;
+    setBusy(true);
+    try {
+      await archiveProduct(product);
+      reload();
+    } finally {
+      setBusy(false);
+    }
   };
+
+  const handleAddSubmit = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      const finalId = newModel.id || `${newModel.baseModel || newModel.model.replaceAll(' ', '-')}-${Date.now().toString(36)}`;
+      await saveProduct({ ...newModel, id: finalId });
+      setShowAddModal(false);
+      setNewModel({
+        id: '',
+        model: '',
+        baseModel: '',
+        category: 'Smartphone',
+        series: 'A',
+        dpSlab: '20k-30k',
+        dp: 25000,
+        flagship: false,
+        status: 'Active'
+      });
+      reload();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-950/60 border border-red-800/60 rounded-2xl text-red-300 text-sm flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4" /> {error}
+      </div>
+    );
+  }
 
   const filtered = products.filter((p) => {
     if (!showArchived && p.status === 'Archived') return false;
@@ -233,7 +261,7 @@ export function ProductManager() {
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           {p.status !== 'Archived' && (
-                            <button onClick={() => handleArchive(p.id)} className="p-1 text-slate-400 hover:text-red-400 transition">
+                            <button onClick={() => handleArchive(p)} className="p-1 text-slate-400 hover:text-red-400 transition">
                               <Archive className="w-3.5 h-3.5" />
                             </button>
                           )}

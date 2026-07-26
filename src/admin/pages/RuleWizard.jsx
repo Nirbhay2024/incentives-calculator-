@@ -1,7 +1,14 @@
-import React, { useState } from 'react';
-import { Sparkles, ArrowRight, ArrowLeft, Check, HelpCircle, AlertCircle, AlertTriangle } from 'lucide-react';
-import { getProducts, saveRule, getActiveSchemeId, getRules } from '../../lib/storage';
+import React, { useEffect, useState } from 'react';
+import { Sparkles, ArrowRight, ArrowLeft, Check, HelpCircle, AlertCircle, AlertTriangle, RefreshCw } from 'lucide-react';
+import { getProducts, saveRule, getActiveScheme, getRules } from '../../lib/storage';
+import { useAsyncData } from '../../lib/useAsyncData';
 import { ruleToEnglish } from '../../lib/rulePreview';
+
+async function loadWizardData() {
+  const activeScheme = await getActiveScheme();
+  const [products, existingRules] = await Promise.all([getProducts(), getRules(activeScheme.id)]);
+  return { products, schemeId: activeScheme.id, existingRules };
+}
 
 const RULE_TEMPLATES = [
   { id: 'focus_model_volume', icon: '🎯', title: 'Focus Model (Volume Slabs)', category: 'Smartphone', desc: 'Higher unit volume unlocks higher per-unit earnings (e.g. A57).' },
@@ -297,19 +304,44 @@ function FlagshipGridEditor({ rows, onChange }) {
 }
 
 export function RuleWizard({ onComplete }) {
+  const { data, loading, error } = useAsyncData(loadWizardData, []);
   const [step, setStep] = useState(1);
-  const products = getProducts();
+  const [ruleData, setRuleData] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
-  const [ruleData, setRuleData] = useState(() => ({
-    id: `rule-${Date.now()}`,
-    schemeId: getActiveSchemeId(),
-    name: '',
-    type: 'focus_model_volume',
-    category: 'Smartphone',
-    description: '',
-    status: 'Active',
-    ...getDefaultFieldsForType('focus_model_volume', 'Smartphone', products)
-  }));
+  useEffect(() => {
+    if (data && !ruleData) {
+      setRuleData({
+        id: `rule-${Date.now()}`,
+        schemeId: data.schemeId,
+        name: '',
+        type: 'focus_model_volume',
+        category: 'Smartphone',
+        description: '',
+        status: 'Active',
+        ...getDefaultFieldsForType('focus_model_volume', 'Smartphone', data.products)
+      });
+    }
+  }, [data, ruleData]);
+
+  if (loading || !ruleData) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-950/60 border border-red-800/60 rounded-2xl text-red-300 text-sm flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4" /> {error}
+      </div>
+    );
+  }
+
+  const products = data.products;
 
   const selectTemplate = (template) => {
     setRuleData((prev) => ({
@@ -325,13 +357,22 @@ export function RuleWizard({ onComplete }) {
     setStep(2);
   };
 
-  const handleSaveRule = (conflict) => {
+  const handleSaveRule = async (conflict) => {
     if (conflict) {
       if (!confirm(`This will archive the existing rule "${conflict.name}" and replace it with your new rule. Continue?`)) return;
-      saveRule({ ...conflict, status: 'Archived' });
     }
-    saveRule(ruleData);
-    onComplete();
+    setSaveError('');
+    setSaving(true);
+    try {
+      if (conflict) {
+        await saveRule({ ...conflict, status: 'Archived' });
+      }
+      await saveRule(ruleData);
+      onComplete();
+    } catch (err) {
+      setSaveError(err.message || 'Failed to save rule.');
+      setSaving(false);
+    }
   };
 
   return (
@@ -590,7 +631,7 @@ export function RuleWizard({ onComplete }) {
 
       {/* STEP 5: Live English Preview & Save */}
       {step === 5 && (() => {
-        const existingRules = getRules(ruleData.schemeId).filter(r => (r.status || 'Active') === 'Active' && r.id !== ruleData.id);
+        const existingRules = (data.existingRules || []).filter(r => (r.status || 'Active') === 'Active' && r.id !== ruleData.id);
         const myKey = getConflictKey(ruleData);
         const conflict = myKey ? existingRules.find(r => getConflictKey(r) === myKey) : null;
 
@@ -631,16 +672,23 @@ export function RuleWizard({ onComplete }) {
               </div>
             )}
 
+            {saveError && (
+              <div className="p-3.5 bg-red-950/60 border border-red-800/60 rounded-xl flex items-start gap-3 text-red-300 text-xs">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" /> {saveError}
+              </div>
+            )}
+
             <div className="flex justify-between pt-4">
               <button onClick={() => setStep(4)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-semibold">
                 Back
               </button>
               <button
                 onClick={() => handleSaveRule(conflict)}
-                className={`px-6 py-3 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg ${conflict ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-950/50' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-950/50'}`}
+                disabled={saving}
+                className={`px-6 py-3 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg disabled:opacity-60 ${conflict ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-950/50' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-950/50'}`}
               >
                 {conflict ? <AlertCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-                {conflict ? 'Override & Publish Rule' : 'Publish Rule to Scheme'}
+                {saving ? 'Publishing…' : conflict ? 'Override & Publish Rule' : 'Publish Rule to Scheme'}
               </button>
             </div>
           </div>

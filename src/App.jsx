@@ -1,14 +1,39 @@
 import React, { useState, useMemo } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { calculateIncentives } from './lib/calculator';
-import { getActiveScheme, getProducts } from './lib/storage';
+import { getBootstrap } from './lib/storage';
+import { useAsyncData } from './lib/useAsyncData';
 import AdminApp from './admin/AdminApp';
 import {
   Calculator, Settings, ArrowRight, UserCircle, Star, Target,
   TrendingUp, Sparkles, LogIn, Plus, Minus, ShoppingCart,
   ChevronDown, ChevronUp, Zap, Trophy, AlertCircle, Smartphone,
-  Watch, Tablet, Laptop, X, CheckCircle2, HelpCircle
+  Watch, Tablet, Laptop, X, CheckCircle2, HelpCircle, RefreshCw
 } from 'lucide-react';
+
+// ── Loading / Error screens (shared by promoter + used as a pattern by admin) ─
+function FullScreenLoader({ message = 'Loading…' }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 flex flex-col items-center justify-center gap-3 p-4">
+      <RefreshCw className="w-8 h-8 text-blue-300 animate-spin" />
+      <p className="text-blue-200 text-sm font-medium">{message}</p>
+    </div>
+  );
+}
+
+function FullScreenError({ message, onRetry }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 flex flex-col items-center justify-center gap-4 p-4 text-center">
+      <AlertCircle className="w-10 h-10 text-red-400" />
+      <p className="text-red-200 text-sm font-medium max-w-sm">{message}</p>
+      {onRetry && (
+        <button onClick={onRetry} className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-5 py-2.5 rounded-xl transition">
+          Retry
+        </button>
+      )}
+    </div>
+  );
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const CATEGORY_META = {
@@ -54,10 +79,10 @@ function Header({ title }) {
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-function PromoterLogin({ onLogin }) {
+function PromoterLogin({ onLogin, scheme }) {
   const [storeCode, setStoreCode] = useState('');
   const [name, setName] = useState('');
-  const activeScheme = getActiveScheme();
+  const activeScheme = scheme || {};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900 flex items-center justify-center p-4">
@@ -367,12 +392,13 @@ function ResultSidebar({ user, results, bucket, targetInnovative, targetFlagship
 }
 
 // ── Calculator ────────────────────────────────────────────────────────────────
-function PromoterCalculator({ user }) {
+function PromoterCalculator({ user, bootstrap }) {
   const [bucket, setBucket] = useState({});
   const [targetInnovative, setTargetInnovative] = useState(40);
   const [targetFlagship, setTargetFlagship] = useState(5);
 
-  const products = useMemo(() => getProducts(), []);
+  const products = bootstrap.products;
+  const rules = bootstrap.rules;
   const sidebarRef = React.useRef(null);
 
   const handleIncrement = id => setBucket(p => ({ ...p, [id]: (p[id] || 0) + 1 }));
@@ -387,8 +413,8 @@ function PromoterCalculator({ user }) {
   });
 
   const results = useMemo(
-    () => calculateIncentives(bucket, { innovative: targetInnovative, flagship: targetFlagship }),
-    [bucket, targetInnovative, targetFlagship]
+    () => calculateIncentives(bucket, { innovative: targetInnovative, flagship: targetFlagship }, products, rules),
+    [bucket, targetInnovative, targetFlagship, products, rules]
   );
 
   const categories = useMemo(() => {
@@ -467,13 +493,26 @@ function PromoterCalculator({ user }) {
   );
 }
 
+// ── Promoter App (fetches the active scheme + catalog once, then routes
+//    between login and calculator without re-fetching) ─────────────────────
+function PromoterApp() {
+  const [user, setUser] = useState(null);
+  const { data: bootstrap, loading, error, reload } = useAsyncData(getBootstrap, []);
+
+  if (loading) return <FullScreenLoader message="Loading this month's scheme…" />;
+  if (error) return <FullScreenError message={error} onRetry={reload} />;
+
+  return user
+    ? <PromoterCalculator user={user} bootstrap={bootstrap} />
+    : <PromoterLogin onLogin={setUser} scheme={bootstrap.scheme} />;
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [user, setUser] = useState(null);
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={user ? <PromoterCalculator user={user} /> : <PromoterLogin onLogin={setUser} />} />
+        <Route path="/" element={<PromoterApp />} />
         <Route path="/admin/*" element={<AdminApp />} />
       </Routes>
     </BrowserRouter>

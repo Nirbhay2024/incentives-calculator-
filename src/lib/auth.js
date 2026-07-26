@@ -1,104 +1,47 @@
-import bcrypt from 'bcryptjs';
+import { apiRequest, getToken, setToken } from './api';
 
-const PASS_KEY = 'incentives_admin_hash';
-const LOCK_KEY = 'incentives_admin_lockout';
-const SESSION_KEY = 'incentives_admin_session';
-const DEFAULT_PASS = 'admin1234';
-const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
-
-// Initialize default hash if not present
-export function initAuth() {
-  if (!localStorage.getItem(PASS_KEY)) {
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(DEFAULT_PASS, salt);
-    localStorage.setItem(PASS_KEY, hash);
-  }
-}
-
-export function isLockedOut() {
-  const lockData = localStorage.getItem(LOCK_KEY);
-  if (!lockData) return false;
-  const { lockUntil, attempts } = JSON.parse(lockData);
-  if (attempts >= 5) {
-    if (Date.now() < lockUntil) {
-      return Math.ceil((lockUntil - Date.now()) / 60000); // minutes remaining
-    } else {
-      localStorage.removeItem(LOCK_KEY);
-      return false;
-    }
-  }
-  return false;
-}
-
-export function recordFailedAttempt() {
-  const lockData = localStorage.getItem(LOCK_KEY);
-  let attempts = 0;
-  if (lockData) {
-    attempts = JSON.parse(lockData).attempts || 0;
-  }
-  attempts += 1;
-  const lockUntil = Date.now() + 15 * 60 * 1000; // 15 min lockout
-  localStorage.setItem(LOCK_KEY, JSON.stringify({ attempts, lockUntil }));
-  return 5 - attempts; // remaining attempts
-}
-
-export function resetFailedAttempts() {
-  localStorage.removeItem(LOCK_KEY);
-}
-
-export function verifyPassword(password) {
-  const lockedMin = isLockedOut();
-  if (lockedMin) {
-    return { success: false, error: `Account locked due to too many failed attempts. Try again in ${lockedMin} minutes.` };
-  }
-
-  const hash = localStorage.getItem(PASS_KEY);
-  if (!hash) {
-    initAuth();
-  }
-  const currentHash = localStorage.getItem(PASS_KEY);
-  const isMatch = bcrypt.compareSync(password, currentHash);
-
-  if (isMatch) {
-    resetFailedAttempts();
-    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token, expiresAt: Date.now() + SESSION_TTL_MS }));
-    return { success: true };
-  } else {
-    const remaining = recordFailedAttempt();
-    if (remaining <= 0) {
-      return { success: false, error: 'Too many invalid attempts. Admin access locked for 15 minutes.' };
-    }
-    return { success: false, error: `Invalid password. ${remaining} attempt(s) remaining.` };
-  }
-}
-
-export function updatePassword(oldPassword, newPassword) {
-  const verify = verifyPassword(oldPassword);
-  if (!verify.success) return verify;
-
-  const salt = bcrypt.genSaltSync(10);
-  const newHash = bcrypt.hashSync(newPassword, salt);
-  localStorage.setItem(PASS_KEY, newHash);
-  return { success: true };
-}
-
-export function isAuthenticated() {
-  const raw = sessionStorage.getItem(SESSION_KEY);
-  if (!raw) return false;
+export async function login(password) {
   try {
-    const { expiresAt } = JSON.parse(raw);
-    if (!expiresAt || Date.now() > expiresAt) {
-      sessionStorage.removeItem(SESSION_KEY);
-      return false;
-    }
+    const { token } = await apiRequest('/api/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({ password })
+    });
+    setToken(token);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function changePassword(oldPassword, newPassword) {
+  try {
+    const { token } = await apiRequest('/api/admin/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword })
+    });
+    setToken(token);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+}
+
+export async function isAuthenticated() {
+  if (!getToken()) return false;
+  try {
+    await apiRequest('/api/admin/me');
     return true;
   } catch {
-    sessionStorage.removeItem(SESSION_KEY);
+    setToken(null);
     return false;
   }
 }
 
-export function logout() {
-  sessionStorage.removeItem(SESSION_KEY);
+export async function logout() {
+  try {
+    await apiRequest('/api/admin/logout', { method: 'POST' });
+  } catch {
+    // Best-effort server-side revocation; clear the local token regardless.
+  }
+  setToken(null);
 }

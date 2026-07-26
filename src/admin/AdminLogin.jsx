@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { Lock, KeyRound, AlertCircle, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
-import { verifyPassword, updatePassword } from '../lib/auth';
+import { login, changePassword } from '../lib/auth';
 
 export default function AdminLogin({ onLoginSuccess }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showChangePass, setShowChangePass] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const [oldPass, setOldPass] = useState('');
   const [newPass, setNewPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
   const [changeMsg, setChangeMsg] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
-    const res = verifyPassword(password);
+    setSubmitting(true);
+    const res = await login(password);
+    setSubmitting(false);
     if (res.success) {
       onLoginSuccess();
     } else {
@@ -23,18 +26,20 @@ export default function AdminLogin({ onLoginSuccess }) {
     }
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     setChangeMsg('');
-    if (newPass.length < 4) {
-      setChangeMsg('New password must be at least 4 characters long.');
+    if (newPass.length < 8) {
+      setChangeMsg('New password must be at least 8 characters long.');
       return;
     }
     if (newPass !== confirmPass) {
       setChangeMsg('New passwords do not match.');
       return;
     }
-    const res = updatePassword(oldPass, newPass);
+    setSubmitting(true);
+    const res = await changePassword(oldPass, newPass);
+    setSubmitting(false);
     if (res.success) {
       setChangeMsg('Password updated successfully! Logged in.');
       setTimeout(() => {
@@ -82,9 +87,10 @@ export default function AdminLogin({ onLoginSuccess }) {
 
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-900/50"
+              disabled={submitting}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-900/50"
             >
-              Access Admin Panel <ArrowRight className="w-4 h-4" />
+              {submitting ? 'Checking…' : <>Access Admin Panel <ArrowRight className="w-4 h-4" /></>}
             </button>
 
             <div className="pt-2 text-center">
@@ -152,9 +158,10 @@ export default function AdminLogin({ onLoginSuccess }) {
               </button>
               <button
                 type="submit"
-                className="w-2/3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-3 rounded-xl transition"
+                disabled={submitting}
+                className="w-2/3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-xs font-bold py-3 rounded-xl transition"
               >
-                Save New Password
+                {submitting ? 'Saving…' : 'Save New Password'}
               </button>
             </div>
           </form>

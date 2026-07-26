@@ -1,16 +1,38 @@
 import React from 'react';
-import { Layers, Package, Zap, Play, Calendar, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
-import { getActiveScheme, getProducts, getRules, getSchemes } from '../../lib/storage';
+import { Layers, Package, Zap, Play, Calendar, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw } from 'lucide-react';
+import { getActiveScheme, getProducts, getRules } from '../../lib/storage';
+import { useAsyncData } from '../../lib/useAsyncData';
 import { ruleToEnglish } from '../../lib/rulePreview';
 
-export function Dashboard({ onNavigate }) {
-  const activeScheme = getActiveScheme();
-  const schemes = getSchemes();
-  const products = getProducts(true);
-  const rules = getRules(activeScheme.id);
+async function loadDashboardData() {
+  const activeScheme = await getActiveScheme();
+  const [products, rules] = await Promise.all([getProducts(), getRules(activeScheme.id)]);
+  return { activeScheme, products, rules };
+}
 
+export function Dashboard({ onNavigate }) {
+  const { data, loading, error } = useAsyncData(loadDashboardData, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-950/60 border border-red-800/60 rounded-2xl text-red-300 text-sm flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4" /> {error}
+      </div>
+    );
+  }
+
+  const { activeScheme, products, rules } = data;
   const activeProductsCount = products.filter(p => p.status !== 'Archived').length;
   const activeRulesCount = rules.filter(r => r.status !== 'Archived').length;
+  const activeRules = rules.filter(r => r.status !== 'Archived');
 
   return (
     <div className="space-y-6">
@@ -93,7 +115,7 @@ export function Dashboard({ onNavigate }) {
         </div>
 
         <div className="space-y-3">
-          {rules.map((rule) => (
+          {activeRules.map((rule) => (
             <div key={rule.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">

@@ -1,0 +1,16 @@
+name = "incentives-calculator"
+compatibility_date = "2024-09-23"
+pages_build_output_dir = "dist"
+
+# Bind the D1 database as `env.DB` inside functions/**.
+# 1. wrangler d1 create incentives-calculator-db
+# 2. paste the returned database_id below
+# 3. also add the same binding in the Cloudflare Pages dashboard:
+#    Pages project -> Settings -> Functions -> D1 database bindings
+#    (git-connected Pages deployments read bindings from the dashboard,
+#    not this file — this file is authoritative for local `wrangler pages dev`
+#    and `wrangler d1 execute` only)
+[[d1_databases]]
+binding = "DB"
+database_name = "incentives-calculator-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"

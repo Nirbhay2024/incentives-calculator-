@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Layers, Package, Zap, Play, LogOut, ArrowLeft, ShieldCheck, Sparkles, Menu, X } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Layers, Package, Zap, Play, LogOut, ArrowLeft, ShieldCheck, Sparkles, Menu, X, RefreshCw } from 'lucide-react';
 import { isAuthenticated, logout } from '../lib/auth';
 import AdminLogin from './AdminLogin';
 import { Dashboard } from './pages/Dashboard';
@@ -10,16 +10,28 @@ import { RuleWizard } from './pages/RuleWizard';
 import { RuleTester } from './pages/RuleTester';
 
 export default function AdminApp() {
-  const [authed, setAuthed] = useState(() => isAuthenticated());
+  const [authed, setAuthed] = useState(null); // null = still checking
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    isAuthenticated().then(setAuthed);
+  }, []);
+
+  if (authed === null) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
 
   if (!authed) {
     return <AdminLogin onLoginSuccess={() => setAuthed(true)} />;
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     setAuthed(false);
   };
 

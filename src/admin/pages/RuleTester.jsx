@@ -1,12 +1,17 @@
-import React, { useState } from 'react';
-import { Play, CheckCircle2, XCircle, Calculator, Zap, HelpCircle } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Play, CheckCircle2, XCircle, Calculator, Zap, HelpCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { getProducts, getRules, getActiveScheme } from '../../lib/storage';
+import { useAsyncData } from '../../lib/useAsyncData';
 import { evaluateSchemeRules } from '../../lib/ruleEngine';
 
+async function loadTesterData() {
+  const activeScheme = await getActiveScheme();
+  const [products, rules] = await Promise.all([getProducts(), getRules(activeScheme.id)]);
+  return { activeScheme, products, rules };
+}
+
 export function RuleTester() {
-  const activeScheme = getActiveScheme();
-  const products = getProducts();
-  const rules = getRules(activeScheme.id);
+  const { data, loading, error } = useAsyncData(loadTesterData, []);
 
   const [testBucket, setTestBucket] = useState({
     'A57-8-128': 6,
@@ -20,7 +25,13 @@ export function RuleTester() {
     flagship: 5
   });
 
-  const evaluation = evaluateSchemeRules(testBucket, testTargets, products, rules);
+  const products = data?.products || [];
+  const rules = data?.rules || [];
+
+  const evaluation = useMemo(
+    () => evaluateSchemeRules(testBucket, testTargets, products, rules),
+    [testBucket, testTargets, products, rules]
+  );
 
   const handleQtyChange = (id, delta) => {
     setTestBucket((prev) => {
@@ -33,6 +44,22 @@ export function RuleTester() {
       return { ...prev, [id]: next };
     });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-950/60 border border-red-800/60 rounded-2xl text-red-300 text-sm flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4" /> {error}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

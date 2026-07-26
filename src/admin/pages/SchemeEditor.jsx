@@ -1,18 +1,48 @@
-import React, { useState } from 'react';
-import { Layers, Save, CheckCircle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Layers, Save, CheckCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 import { getActiveScheme, saveScheme } from '../../lib/storage';
+import { useAsyncData } from '../../lib/useAsyncData';
 
 export function SchemeEditor() {
-  const current = getActiveScheme();
-  const [formData, setFormData] = useState({ ...current });
+  const { data: current, loading, error, reload } = useAsyncData(getActiveScheme, []);
+  const [formData, setFormData] = useState(null);
   const [savedMsg, setSavedMsg] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (current && !formData) setFormData({ ...current });
+  }, [current, formData]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    saveScheme(formData);
-    setSavedMsg('Scheme settings saved successfully!');
-    setTimeout(() => setSavedMsg(''), 3000);
+    setSaving(true);
+    try {
+      await saveScheme(formData);
+      setSavedMsg('Scheme settings saved successfully!');
+      reload();
+      setTimeout(() => setSavedMsg(''), 3000);
+    } catch (err) {
+      setSavedMsg(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading || !formData) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <RefreshCw className="w-6 h-6 text-indigo-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-950/60 border border-red-800/60 rounded-2xl text-red-300 text-sm flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4" /> {error}
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -25,7 +55,7 @@ export function SchemeEditor() {
         </div>
 
         {savedMsg && (
-          <div className="p-3 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded-xl text-xs flex items-center gap-2">
+          <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${savedMsg.includes('successfully') ? 'bg-emerald-950/60 border border-emerald-800 text-emerald-300' : 'bg-red-950/60 border border-red-800 text-red-300'}`}>
             <CheckCircle className="w-4 h-4" /> {savedMsg}
           </div>
         )}
@@ -106,9 +136,10 @@ export function SchemeEditor() {
           <div className="pt-2">
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm px-6 py-3 rounded-xl flex items-center gap-2 transition"
+              disabled={saving}
+              className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-bold text-sm px-6 py-3 rounded-xl flex items-center gap-2 transition"
             >
-              <Save className="w-4 h-4" /> Save Scheme Settings
+              <Save className="w-4 h-4" /> {saving ? 'Saving…' : 'Save Scheme Settings'}
             </button>
           </div>
         </form>
