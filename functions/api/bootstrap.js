@@ -1,8 +1,9 @@
 import { json, withErrorHandling, HttpError } from '../_lib/http.js';
-import { mapScheme, mapProduct, mapRule, sortProducts } from '../_lib/db.js';
+import { mapScheme, mapProduct, mapRule, mapAnnouncement, sortProducts } from '../_lib/db.js';
 
 // Public, read-only. Returns everything the promoter calculator needs in one
-// round trip: the active scheme, active products, and active rules.
+// round trip: the active scheme, active products, active rules, and any
+// live notice-board announcements.
 export const onRequestGet = withErrorHandling(async ({ env }) => {
   const db = env.DB;
 
@@ -18,9 +19,14 @@ export const onRequestGet = withErrorHandling(async ({ env }) => {
     .bind(schemeRow.id)
     .all();
 
+  const { results: announcementRows } = await db
+    .prepare("SELECT * FROM announcements WHERE status = 'Active' ORDER BY created_at DESC")
+    .all();
+
   return json({
     scheme: mapScheme(schemeRow),
     products: sortProducts((productRows || []).map(mapProduct)),
-    rules: (ruleRows || []).map(mapRule)
+    rules: (ruleRows || []).map(mapRule),
+    announcements: (announcementRows || []).map(mapAnnouncement)
   });
 });

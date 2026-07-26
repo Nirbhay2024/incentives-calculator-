@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Layers, Package, Zap, Play, LogOut, ArrowLeft, ShieldCheck, Sparkles, Menu, X, RefreshCw } from 'lucide-react';
+import { Layers, Package, Zap, Play, LogOut, ArrowLeft, ShieldCheck, Sparkles, Menu, X, RefreshCw, Megaphone } from 'lucide-react';
 import { isAuthenticated, logout } from '../lib/auth';
 import AdminLogin from './AdminLogin';
 import { Dashboard } from './pages/Dashboard';
@@ -8,6 +8,7 @@ import { ProductManager } from './pages/ProductManager';
 import { RuleManager } from './pages/RuleManager';
 import { RuleWizard } from './pages/RuleWizard';
 import { RuleTester } from './pages/RuleTester';
+import { Announcements } from './pages/Announcements';
 
 export default function AdminApp() {
   const [authed, setAuthed] = useState(null); // null = still checking
@@ -41,6 +42,7 @@ export default function AdminApp() {
     { id: 'products', label: 'Product & DP Master', icon: Package },
     { id: 'rules', label: 'Rule Generator', icon: Zap },
     { id: 'tester', label: 'Rule Tester / Simulator', icon: Play },
+    { id: 'announcements', label: 'Notice Board', icon: Megaphone },
   ];
 
   return (
@@ -119,6 +121,7 @@ export default function AdminApp() {
         {currentTab === 'rules' && <RuleManager onCreateNewRule={() => setCurrentTab('wizard')} />}
         {currentTab === 'wizard' && <RuleWizard onComplete={() => setCurrentTab('rules')} />}
         {currentTab === 'tester' && <RuleTester />}
+        {currentTab === 'announcements' && <Announcements />}
       </main>
     </div>
   );

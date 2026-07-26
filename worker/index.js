@@ -14,6 +14,8 @@ import * as schemesActivate from '../functions/api/admin/schemes/activate.js';
 import * as productsIndex from '../functions/api/admin/products/index.js';
 import * as rulesIndex from '../functions/api/admin/rules/index.js';
 import * as ruleById from '../functions/api/admin/rules/[id].js';
+import * as announcementsIndex from '../functions/api/admin/announcements/index.js';
+import * as announcementById from '../functions/api/admin/announcements/[id].js';
 
 const routes = [
   { method: 'GET', pattern: /^\/api\/bootstrap$/, handler: bootstrap.onRequestGet },
@@ -28,7 +30,10 @@ const routes = [
   { method: 'PUT', pattern: /^\/api\/admin\/products$/, handler: productsIndex.onRequestPut },
   { method: 'GET', pattern: /^\/api\/admin\/rules$/, handler: rulesIndex.onRequestGet },
   { method: 'PUT', pattern: /^\/api\/admin\/rules$/, handler: rulesIndex.onRequestPut },
-  { method: 'DELETE', pattern: /^\/api\/admin\/rules\/([^/]+)$/, handler: ruleById.onRequestDelete, paramNames: ['id'] }
+  { method: 'DELETE', pattern: /^\/api\/admin\/rules\/([^/]+)$/, handler: ruleById.onRequestDelete, paramNames: ['id'] },
+  { method: 'GET', pattern: /^\/api\/admin\/announcements$/, handler: announcementsIndex.onRequestGet },
+  { method: 'PUT', pattern: /^\/api\/admin\/announcements$/, handler: announcementsIndex.onRequestPut },
+  { method: 'DELETE', pattern: /^\/api\/admin\/announcements\/([^/]+)$/, handler: announcementById.onRequestDelete, paramNames: ['id'] }
 ];
 
 const SECURITY_HEADERS = {

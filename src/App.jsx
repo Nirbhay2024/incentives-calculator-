@@ -7,10 +7,54 @@ import { selectOnFocus } from './lib/uiHelpers';
 import AdminApp from './admin/AdminApp';
 import {
   Calculator, Settings, ArrowRight, UserCircle, Star, Target,
-  TrendingUp, Sparkles, LogIn, Plus, Minus, ShoppingCart,
+  TrendingUp, TrendingDown, Info, Megaphone, Sparkles, LogIn, Plus, Minus, ShoppingCart,
   ChevronDown, ChevronUp, Zap, Trophy, AlertCircle, Smartphone,
   Watch, Tablet, Laptop, X, CheckCircle2, HelpCircle, RefreshCw
 } from 'lucide-react';
+
+const ANNOUNCEMENT_META = {
+  promo: { icon: TrendingUp, bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900', badge: 'bg-emerald-100 text-emerald-700', label: 'Push' },
+  alert: { icon: TrendingDown, bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900', badge: 'bg-amber-100 text-amber-700', label: 'Heads Up' },
+  info: { icon: Info, bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-900', badge: 'bg-blue-100 text-blue-700', label: 'Notice' }
+};
+
+// ── Notice Board ─────────────────────────────────────────────────────────────
+function NoticeBoard({ announcements }) {
+  const [dismissed, setDismissed] = useState(() => new Set());
+  const visible = (announcements || []).filter(a => !dismissed.has(a.id));
+
+  if (visible.length === 0) return null;
+
+  return (
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 space-y-2.5">
+      {visible.map(a => {
+        const meta = ANNOUNCEMENT_META[a.type] || ANNOUNCEMENT_META.info;
+        const Icon = meta.icon;
+        return (
+          <div key={a.id} className={`rounded-2xl border p-3.5 sm:p-4 ${meta.bg} ${meta.border} flex items-start gap-3`}>
+            <div className="flex-shrink-0 mt-0.5">
+              <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${meta.text}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${meta.badge}`}>{meta.label}</span>
+                <span className={`font-bold text-xs sm:text-sm ${meta.text}`}>{a.title}</span>
+              </div>
+              <p className={`text-[11px] sm:text-xs ${meta.text} opacity-90 leading-relaxed`}>{a.message}</p>
+            </div>
+            <button
+              onClick={() => setDismissed(prev => new Set(prev).add(a.id))}
+              className={`flex-shrink-0 p-1 rounded-lg hover:bg-black/5 transition ${meta.text} opacity-60 hover:opacity-100`}
+              aria-label="Dismiss"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // ── Loading / Error screens (shared by promoter + used as a pattern by admin) ─
 function FullScreenLoader({ message = 'Loading…' }) {
@@ -438,6 +482,7 @@ function PromoterCalculator({ user, bootstrap }) {
   return (
     <div className="min-h-screen bg-slate-50 pb-20 lg:pb-6">
       <Header title="Calculator" />
+      <NoticeBoard announcements={bootstrap.announcements} />
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex flex-col lg:flex-row gap-5 lg:gap-6 items-start">
 
         {/* LEFT: Model Catalog */}

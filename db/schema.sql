@@ -73,3 +73,17 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   lock_until INTEGER NOT NULL DEFAULT 0,
   updated_at INTEGER NOT NULL
 );
+
+-- Notice board: admin-posted announcements shown to every promoter on the
+-- calculator (e.g. "push Z Fold 8 this month", "A27 stock delayed").
+CREATE TABLE IF NOT EXISTS announcements (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'info',
+  status TEXT NOT NULL DEFAULT 'Active',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_announcements_status ON announcements(status);

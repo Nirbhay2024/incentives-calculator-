@@ -92,3 +92,15 @@ export function validateSchemePayload(body) {
 
   return { id, name, description, channel, startDate, endDate, status, version };
 }
+
+const ANNOUNCEMENT_TYPES = ['info', 'promo', 'alert'];
+
+export function validateAnnouncementPayload(body) {
+  const id = requireString(body.id, 'id', { max: 100 });
+  const title = requireString(body.title, 'title', { max: 150 });
+  const message = requireString(body.message, 'message', { max: 1000 });
+  const type = body.type ? requireOneOf(body.type, 'type', ANNOUNCEMENT_TYPES) : 'info';
+  const status = body.status ? requireOneOf(body.status, 'status', ['Active', 'Archived']) : 'Active';
+
+  return { id, title, message, type, status };
+}

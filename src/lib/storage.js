@@ -49,3 +49,20 @@ export async function saveRule(rule) {
 export async function deleteRule(id) {
   return apiRequest(`/api/admin/rules/${encodeURIComponent(id)}`, { method: 'DELETE' });
 }
+
+// ── Announcements / Notice Board (admin) ───────────────────────────────────────
+export async function getAnnouncements() {
+  return apiRequest('/api/admin/announcements');
+}
+
+export async function saveAnnouncement(announcement) {
+  return apiRequest('/api/admin/announcements', { method: 'PUT', body: JSON.stringify(announcement) });
+}
+
+export async function archiveAnnouncement(announcement) {
+  return saveAnnouncement({ ...announcement, status: 'Archived' });
+}
+
+export async function deleteAnnouncement(id) {
+  return apiRequest(`/api/admin/announcements/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

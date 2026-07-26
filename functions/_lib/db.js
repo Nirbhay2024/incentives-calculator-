@@ -54,6 +54,18 @@ export function sortProducts(products) {
   });
 }
 
+export function mapAnnouncement(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    message: row.message,
+    type: row.type || 'info',
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
 export function mapRule(row) {
   let data = {};
   try {
